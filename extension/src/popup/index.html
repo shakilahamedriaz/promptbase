@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=420, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';">
+  <title>PromptVault Pro</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="logo">⬡ PromptVault Pro</div>
+    <div class="platform-badge" id="platform-badge"></div>
+    <button id="theme-toggle" title="Toggle theme">☀</button>
+  </header>
+
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="Search prompts..." autocomplete="off">
+    <button id="add-btn" title="Add new prompt">+</button>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="library">Library</button>
+    <button class="tab" data-tab="history">History</button>
+    <button class="tab" data-tab="settings">Settings</button>
+  </nav>
+
+  <!-- Library Tab -->
+  <div class="tab-content active" id="tab-library">
+    <div class="filter-row">
+      <select id="category-filter">
+        <option value="">All Categories</option>
+        <option value="coding">Coding</option>
+        <option value="writing">Writing</option>
+        <option value="research">Research</option>
+        <option value="marketing">Marketing</option>
+        <option value="general">General</option>
+      </select>
+      <select id="sort-select">
+        <option value="updated">Recently Used</option>
+        <option value="alpha">Alphabetical</option>
+        <option value="most_used">Most Used</option>
+        <option value="created">Date Created</option>
+      </select>
+      <button id="fav-filter" title="Show favorites only">★</button>
+    </div>
+    <div id="prompt-list" class="prompt-list"></div>
+    <div id="empty-state" class="empty-state hidden">
+      <p>No prompts yet.</p>
+      <button id="empty-add-btn">Add your first prompt</button>
+    </div>
+  </div>
+
+  <!-- History Tab -->
+  <div class="tab-content hidden" id="tab-history">
+    <div id="history-list" class="prompt-list"></div>
+    <div id="history-empty" class="empty-state hidden"><p>No history yet.</p></div>
+  </div>
+
+  <!-- Settings Tab -->
+  <div class="tab-content hidden" id="tab-settings">
+    <div class="settings-group">
+      <label>Backend URL</label>
+      <input type="text" id="backend-url-input" placeholder="http://localhost:8000">
+    </div>
+    <div class="settings-group">
+      <label>Auth Token (JWT)</label>
+      <input type="text" id="auth-token-input" placeholder="Paste JWT token">
+    </div>
+    <div class="settings-group toggle-row">
+      <label>Auto-submit after paste</label>
+      <input type="checkbox" id="auto-submit-toggle">
+    </div>
+    <div class="settings-group toggle-row">
+      <label>Dark Mode</label>
+      <input type="checkbox" id="dark-mode-toggle" checked>
+    </div>
+    <button id="save-settings-btn" class="btn-primary">Save Settings</button>
+    <button id="sync-now-btn" class="btn-secondary">Sync Now</button>
+    <div id="settings-status"></div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="modal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-title">New Prompt</h3>
+      <button id="modal-close">✕</button>
+    </div>
+    <input type="text" id="prompt-title" placeholder="Title" maxlength="200">
+    <textarea id="prompt-body" placeholder="Prompt text... Use {{variable}} for templates" rows="8"></textarea>
+    <div class="modal-meta">
+      <select id="prompt-category">
+        <option value="general">General</option>
+        <option value="coding">Coding</option>
+        <option value="writing">Writing</option>
+        <option value="research">Research</option>
+        <option value="marketing">Marketing</option>
+      </select>
+      <input type="text" id="prompt-tags" placeholder="tags, comma, separated">
+    </div>
+    <div class="char-count" id="char-count">0 characters</div>
+    <div class="modal-actions">
+      <button id="modal-cancel" class="btn-secondary">Cancel</button>
+      <button id="modal-save" class="btn-primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Variable Fill Modal -->
+<div id="var-modal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Fill Variables</h3>
+      <button id="var-modal-close">✕</button>
+    </div>
+    <div id="var-fields"></div>
+    <div class="modal-actions">
+      <button id="var-cancel" class="btn-secondary">Cancel</button>
+      <button id="var-insert" class="btn-primary">Insert Prompt</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<script type="module" src="popup.js"></script>
+</body>
+</html>
