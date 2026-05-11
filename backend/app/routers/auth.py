@@ -207,6 +207,6 @@ async def google_callback(code: str, db: AsyncSession = Depends(get_db)):
 
     # Issue our own JWT tokens
     access_token = auth_service.create_access_token(user.id)
-    refresh_token = auth_service.create_refresh_token(user.id)
 
-    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+    frontend_url = settings.FRONTEND_URL.rstrip('/')
+    return RedirectResponse(url=f"{frontend_url}/auth/callback?token={access_token}")

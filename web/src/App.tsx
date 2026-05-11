@@ -5,6 +5,7 @@ import { Layout } from '@/components/Layout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RegisterPage } from '@/features/auth/RegisterPage';
+import { GoogleCallbackPage } from '@/features/auth/GoogleCallbackPage';
 import { LibraryPage } from '@/features/library/LibraryPage';
 import { RefinerPage } from '@/features/refiner/RefinerPage';
 import { HistoryPage } from '@/features/history/HistoryPage';
@@ -42,6 +43,7 @@ export default function App() {
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/auth/callback" element={<GoogleCallbackPage />} />
 
         {/* Protected routes */}
         <Route

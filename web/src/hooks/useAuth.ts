@@ -30,7 +30,7 @@ export function useAuth() {
 
   const handleGoogleOAuth = useCallback(() => {
     const apiUrl = (import.meta as { env: Record<string, string> }).env.VITE_API_URL || 'http://localhost:8000';
-    window.location.href = `${apiUrl}/auth/google`;
+    window.location.href = `${apiUrl}/v1/auth/google`;
   }, []);
 
   return {

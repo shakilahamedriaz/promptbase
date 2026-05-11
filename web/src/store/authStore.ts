@@ -39,6 +39,7 @@ interface AuthState {
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
   clearError: () => void;
 }
@@ -59,6 +60,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         password: payload.password,
       });
       tokenStore.set(data.access_token);
+      localStorage.setItem('pv_ext_token', data.access_token);
       window.dispatchEvent(new CustomEvent('PV_AUTH_SYNC', { detail: { token: data.access_token } }));
       const user = await api.get<User>('/auth/me');
       set({ user, isAuthenticated: true, isLoading: false, error: null });
@@ -76,6 +78,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const data = await api.post<AuthResponse>('/auth/register', payload);
       tokenStore.set(data.access_token);
+      localStorage.setItem('pv_ext_token', data.access_token);
       window.dispatchEvent(new CustomEvent('PV_AUTH_SYNC', { detail: { token: data.access_token } }));
       const user = await api.get<User>('/auth/me');
       set({ user, isAuthenticated: true, isLoading: false, error: null });
@@ -95,6 +98,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Ignore network errors on logout
     } finally {
       tokenStore.clear();
+      localStorage.removeItem('pv_ext_token');
       window.dispatchEvent(new CustomEvent('PV_AUTH_LOGOUT'));
       set({ user: null, isAuthenticated: false, error: null });
     }
@@ -110,6 +114,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch {
       tokenStore.clear();
       set({ user: null, isAuthenticated: false, isLoading: false });
+    }
+  },
+
+  loginWithToken: async (token) => {
+    tokenStore.set(token);
+    localStorage.setItem('pv_ext_token', token);
+    window.dispatchEvent(new CustomEvent('PV_AUTH_SYNC', { detail: { token } }));
+    try {
+      const user = await api.get<User>('/auth/me');
+      set({ user, isAuthenticated: true, isLoading: false, error: null });
+    } catch {
+      tokenStore.clear();
+      localStorage.removeItem('pv_ext_token');
+      set({ user: null, isAuthenticated: false, error: 'Google sign-in failed. Please try again.' });
     }
   },
 

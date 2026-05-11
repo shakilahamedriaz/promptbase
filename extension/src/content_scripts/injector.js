@@ -23,7 +23,7 @@
       position: fixed;
       bottom: 24px;
       right: 24px;
-      z-index: 99999;
+      z-index: 2147483647;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -49,7 +49,7 @@
       position: fixed;
       bottom: 76px;
       right: 24px;
-      z-index: 99999;
+      z-index: 2147483647;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -77,13 +77,13 @@
     @keyframes pv-spin { to { transform: rotate(360deg); } }
 
     #${OVERLAY_ID} {
-      position: fixed; inset: 0; z-index: 99997; background: transparent; display: none;
+      position: fixed; inset: 0; z-index: 2147483645; background: transparent; display: none;
     }
     #${OVERLAY_ID}.pv-visible { display: block; }
 
     #${SIDEBAR_ID} {
       position: fixed; top: 0; right: 0; width: 420px; height: 100vh;
-      z-index: 99998; border: none; border-left: 1px solid #30363D;
+      z-index: 2147483646; border: none; border-left: 1px solid #30363D;
       box-shadow: -4px 0 24px rgba(0,0,0,0.4); background: #0D1117;
       transform: translateX(100%);
       transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
@@ -94,7 +94,7 @@
       position: fixed;
       bottom: 90px;
       right: 24px;
-      z-index: 100000;
+      z-index: 2147483647;
       background: #1e1e2e;
       color: #cdd6f4;
       border: 1px solid #313244;
@@ -217,8 +217,17 @@
     refineBtn.disabled = true;
     refineBtn.innerHTML = `<span class="pv-spin">⟳</span><span>Refining…</span>`;
 
+    // Guard against invalidated extension context (happens after extension reload)
+    if (!chrome.runtime?.id) {
+      showToast('⚠️ Page reload needed — extension was updated.', 'error');
+      refineBtn.disabled = false;
+      refineBtn.innerHTML = `<span>✨</span><span>Refine</span>`;
+      return;
+    }
+
+    let result;
     try {
-      const result = await chrome.runtime.sendMessage({
+      result = await chrome.runtime.sendMessage({
         type: 'REFINE_PROMPT',
         payload: { text: currentText, style: 'professional' },
       });
@@ -265,12 +274,19 @@
 
   // ── Mount ───────────────────────────────────────────────────────────────────
 
+  // Append to <html> to escape any CSS transform/overflow context on <body>
+  function getRoot() {
+    return document.documentElement || document.body;
+  }
+
   function mount() {
-    document.body.appendChild(overlay);
-    document.body.appendChild(sidebar);
-    document.body.appendChild(refineBtn);
-    document.body.appendChild(fab);
-    document.body.appendChild(toast);
+    const root = getRoot();
+    root.appendChild(style);
+    root.appendChild(overlay);
+    root.appendChild(sidebar);
+    root.appendChild(refineBtn);
+    root.appendChild(fab);
+    root.appendChild(toast);
   }
 
   if (document.readyState === 'loading') {
@@ -281,13 +297,14 @@
 
   // SPA re-mount guard: ChatGPT/Claude/etc. wipe injected DOM on navigation
   setInterval(() => {
-    if (!document.body) return;
+    if (!document.documentElement) return;
     if (!document.getElementById(FAB_ID)) {
-      document.body.appendChild(overlay);
-      document.body.appendChild(sidebar);
-      document.body.appendChild(refineBtn);
-      document.body.appendChild(fab);
-      document.body.appendChild(toast);
+      const root = getRoot();
+      root.appendChild(overlay);
+      root.appendChild(sidebar);
+      root.appendChild(refineBtn);
+      root.appendChild(fab);
+      root.appendChild(toast);
     }
   }, 1000);
 
