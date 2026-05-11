@@ -84,4 +84,29 @@
   }
 
   window.__pv_inject = inject;
+
+  window.__pv_read_input = function () {
+    const selectors = ['#searchbox', 'textarea[name="q"]', 'textarea[placeholder]', 'div[contenteditable="true"]', 'textarea'];
+    for (const sel of selectors) {
+      const candidates = document.querySelectorAll(sel);
+      for (const el of candidates) {
+        if (el.offsetHeight > 20) {
+          return el.value !== undefined ? (el.value || '') : (el.innerText || el.textContent || '');
+        }
+      }
+    }
+    return '';
+  };
+
+  window.__pv_submit = function () {
+    const btns = [
+      document.querySelector('button[aria-label*="submit" i]'),
+      document.querySelector('button[aria-label*="send" i]'),
+      document.querySelector('button[type="submit"]'),
+    ];
+    for (const btn of btns) {
+      if (btn && !btn.disabled) { btn.click(); return true; }
+    }
+    return false;
+  };
 })();

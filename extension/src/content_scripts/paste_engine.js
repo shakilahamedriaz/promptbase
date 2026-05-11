@@ -63,11 +63,11 @@
 
   function detectPlatform() {
     const hostname = window.location.hostname;
-    if (hostname.includes('chat.openai.com')) return 'chatgpt';
+    if (hostname.includes('chatgpt.com') || hostname.includes('chat.openai.com')) return 'chatgpt';
     if (hostname.includes('claude.ai')) return 'claude';
     if (hostname.includes('gemini.google.com')) return 'gemini';
     if (hostname.includes('perplexity.ai')) return 'perplexity';
-    if (hostname.includes('grok.x.com')) return 'grok';
+    if (hostname.includes('grok.com') || hostname.includes('grok.x.com')) return 'grok';
     if (hostname.includes('copilot.microsoft.com')) return 'copilot';
     return 'unknown';
   }

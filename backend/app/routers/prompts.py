@@ -1,7 +1,10 @@
+import csv
+import io
+import json
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -69,6 +72,40 @@ async def export_prompts(
 ):
     data = await prompt_service.export_prompts(db, user_id)
     return JSONResponse(content=data)
+
+
+@router.post("/import", response_model=BulkImportResponse, status_code=status.HTTP_201_CREATED)
+async def import_prompts_file(
+    file: UploadFile = File(...),
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """Accept a JSON or CSV file upload and bulk-import prompts."""
+    content = await file.read()
+    prompts_data: list[dict] = []
+
+    filename = (file.filename or "").lower()
+    try:
+        if filename.endswith(".csv"):
+            reader = csv.DictReader(io.StringIO(content.decode("utf-8")))
+            for row in reader:
+                if row.get("title") and row.get("body"):
+                    tags_raw = row.get("tags", "")
+                    tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
+                    prompts_data.append({
+                        "title": row["title"],
+                        "body": row["body"],
+                        "category": row.get("category", "general"),
+                        "tags": tags,
+                    })
+        else:
+            parsed = json.loads(content.decode("utf-8"))
+            prompts_data = parsed if isinstance(parsed, list) else parsed.get("prompts", [])
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid file: {exc}")
+
+    data = BulkImportRequest(prompts=prompts_data)
+    return await prompt_service.bulk_import(db, user_id, data)
 
 
 @router.post("/bulk-import", response_model=BulkImportResponse, status_code=status.HTTP_201_CREATED)

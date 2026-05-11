@@ -1,65 +1,56 @@
 /**
  * PromptVault Pro – ChatGPT platform injector
- * Inlined as content script (no ES module imports).
- * Attaches window.__pv_inject for paste_engine.js to call.
  */
 (function () {
   'use strict';
 
-  function inject(text) {
-    // Primary selector for ChatGPT's main prompt textarea
-    const selectors = [
-      '#prompt-textarea',
-      'textarea[data-id="root"]',
-      'textarea[placeholder]',
-      'textarea',
-    ];
+  const SELECTORS = [
+    '#prompt-textarea',
+    'textarea[data-id="root"]',
+    'textarea[placeholder]',
+    'textarea',
+  ];
 
-    let el = null;
-    for (const sel of selectors) {
-      el = document.querySelector(sel);
-      if (el) break;
+  function findInput() {
+    for (const sel of SELECTORS) {
+      const el = document.querySelector(sel);
+      if (el) return el;
     }
+    return null;
+  }
 
-    if (!el) {
-      console.warn('[PV] ChatGPT: no textarea found');
-      return false;
-    }
-
+  window.__pv_inject = function (text) {
+    const el = findInput();
+    if (!el) { console.warn('[PV] ChatGPT: no textarea found'); return false; }
     try {
-      // React controlled input – must use native setter to bypass React's synthetic event system
-      const nativeTextareaSetter = Object.getOwnPropertyDescriptor(
-        HTMLTextAreaElement.prototype,
-        'value'
-      );
-      if (nativeTextareaSetter && nativeTextareaSetter.set) {
-        nativeTextareaSetter.set.call(el, text);
-      } else {
-        el.value = text;
-      }
-
-      // Dispatch events that React listens for
+      const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+      if (setter && setter.set) setter.set.call(el, text); else el.value = text;
       el.dispatchEvent(new Event('input', { bubbles: true }));
       el.dispatchEvent(new Event('change', { bubbles: true }));
-
       el.focus();
-      // Move caret to end
       el.setSelectionRange(el.value.length, el.value.length);
       return true;
     } catch (err) {
-      console.warn('[PV] ChatGPT inject error, trying fallback:', err);
-      try {
-        el.value = text;
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.focus();
-        return true;
-      } catch (fallbackErr) {
-        console.error('[PV] ChatGPT fallback inject error:', fallbackErr);
-        return false;
-      }
+      try { el.value = text; el.dispatchEvent(new Event('input', { bubbles: true })); el.focus(); return true; }
+      catch { return false; }
     }
-  }
+  };
 
-  // Register on window so paste_engine.js can call it
-  window.__pv_inject = inject;
+  window.__pv_read_input = function () {
+    const el = findInput();
+    return el ? (el.value || el.innerText || '') : '';
+  };
+
+  window.__pv_submit = function () {
+    const btns = [
+      document.querySelector('button[data-testid="send-button"]'),
+      document.querySelector('button[aria-label="Send prompt"]'),
+      document.querySelector('button[aria-label*="send" i]'),
+      document.querySelector('#prompt-textarea')?.closest('form')?.querySelector('button[type="submit"]'),
+    ];
+    for (const btn of btns) {
+      if (btn && !btn.disabled) { btn.click(); return true; }
+    }
+    return false;
+  };
 })();

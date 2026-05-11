@@ -263,6 +263,32 @@ async function handleMessage(message, sender) {
       return { prompt: null };
     }
 
+    case 'REFINE_PROMPT': {
+      const { text, style = 'professional' } = payload || {};
+      if (!text || !text.trim()) return { error: 'No text to refine.' };
+      const backendUrl = await getSetting('BACKEND_URL', DEFAULT_BACKEND_URL);
+      const authToken = await getSetting('auth_token', null);
+      if (!authToken) return { error: 'Not logged in. Open PromptVault settings and paste your auth token.' };
+      try {
+        const resp = await fetch(`${backendUrl.replace(/\/$/, '')}/v1/ai/refine`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ body: text, style, prompt_id: null }),
+        });
+        if (resp.status === 401) return { error: 'Auth token expired. Re-login and update extension settings.' };
+        if (!resp.ok) return { error: `Backend error ${resp.status}` };
+        const data = await resp.json();
+        return {
+          refined: data.refined_body,
+          explanation: data.explanation || '',
+          score_before: data.score_before ?? null,
+          score_after: data.score_after ?? null,
+        };
+      } catch (fetchErr) {
+        return { error: `Cannot reach backend: ${fetchErr.message}` };
+      }
+    }
+
     default:
       return { error: `Unknown message type: ${type}` };
   }

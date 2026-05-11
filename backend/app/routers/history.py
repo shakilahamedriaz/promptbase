@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
@@ -21,16 +22,14 @@ async def get_history(
     page: int = Query(default=1, ge=1),
     per_page: int = Query(default=20, ge=1, le=100),
     platform: str | None = Query(default=None),
+    from_: datetime | None = Query(default=None, alias="from"),
+    to: datetime | None = Query(default=None),
     user_id: UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    """Retrieve paginated usage history for the current user."""
     return await history_service.get_history(
-        db,
-        user_id,
-        page=page,
-        per_page=per_page,
-        platform=platform,
+        db, user_id, page=page, per_page=per_page,
+        platform=platform, from_dt=from_, to_dt=to,
     )
 
 
@@ -40,8 +39,16 @@ async def log_history(
     user_id: UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    """Log a prompt usage event."""
     return await history_service.log_usage(db, user_id, data)
+
+
+@router.delete("/{history_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_history_entry(
+    history_id: UUID,
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    await history_service.delete_single_record(db, history_id, user_id)
 
 
 @router.delete("", status_code=status.HTTP_200_OK)
@@ -50,14 +57,5 @@ async def clear_history(
     user_id: UUID = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Delete history records.
-    Pass `all: true` to clear everything, or `ids: [...]` for selective deletion.
-    """
-    deleted = await history_service.clear_history(
-        db,
-        user_id,
-        ids=body.ids,
-        all_records=body.all,
-    )
+    deleted = await history_service.clear_history(db, user_id, ids=body.ids, all_records=body.all)
     return {"deleted": deleted}

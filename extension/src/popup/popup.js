@@ -322,21 +322,43 @@ function extractVariables(text) {
   return Array.from(found);
 }
 
-async function pasteToActiveTab(prompt, text) {
+const AI_HOSTS = [
+  'chat.openai.com', 'chatgpt.com',
+  'claude.ai',
+  'gemini.google.com',
+  'perplexity.ai',
+  'grok.com', 'grok.x.com',
+  'copilot.microsoft.com',
+];
+
+function isAiTab(url) {
+  if (!url) return false;
   try {
-    const tabs = await new Promise((resolve, reject) => {
-      chrome.tabs.query({ active: true, currentWindow: true }, (t) => {
-        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-        else resolve(t);
-      });
-    });
+    const host = new URL(url).hostname;
+    return AI_HOSTS.some((h) => host === h || host.endsWith('.' + h));
+  } catch { return false; }
+}
 
-    const tab = tabs?.[0];
-    if (!tab?.id) {
-      showToast('No active tab found', 'error');
-      return;
+async function pasteToActiveTab(prompt, text) {
+  // Get active tab
+  const tabs = await new Promise((resolve) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (t) => resolve(t || []));
+  });
+  const tab = tabs?.[0];
+
+  // If not on an AI page, skip injection and copy to clipboard silently
+  if (!tab?.id || !isAiTab(tab.url)) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Copied! Open an AI site to paste directly.', 'info');
+    } catch {
+      showToast('Could not copy — open an AI site first.', 'error');
     }
+    return;
+  }
 
+  // Try to inject into the AI page
+  try {
     await new Promise((resolve, reject) => {
       chrome.tabs.sendMessage(tab.id, { type: 'PASTE_PROMPT', text }, (res) => {
         if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
@@ -344,7 +366,6 @@ async function pasteToActiveTab(prompt, text) {
       });
     });
 
-    // Increment use count and log history
     await sendMsg('INCREMENT_USE_COUNT', { id: prompt.id });
     await sendMsg('LOG_HISTORY', {
       prompt_id: prompt.id,
@@ -352,17 +373,14 @@ async function pasteToActiveTab(prompt, text) {
       platform: dom.platformBadge.textContent.toLowerCase() || 'unknown',
       was_refined: false,
     });
-
-    // Reload prompts to reflect new use_count
     await loadPrompts();
     showToast('Prompt inserted!', 'success');
-  } catch (err) {
-    console.warn('[PV] pasteToActiveTab error:', err.message);
-    // Try clipboard as fallback
+  } catch {
+    // Content script may not have loaded yet (page still loading) — fall back to clipboard
     try {
       await navigator.clipboard.writeText(text);
-      showToast('Copied to clipboard', 'info');
-    } catch (clipErr) {
+      showToast('Copied! Reload the AI page if the button is missing.', 'info');
+    } catch {
       showToast('Could not insert prompt', 'error');
     }
   }

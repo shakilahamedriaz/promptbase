@@ -23,7 +23,8 @@
     "https://x.com/*",
     "https://copilot.microsoft.com/*",
     "https://api.promptvault.app/*",
-    "http://localhost:8000/*"
+    "http://localhost:8000/*",
+    "http://localhost:5173/*"
   ],
 
   "background": {
@@ -101,6 +102,11 @@
         "src/content_scripts/paste_engine.js",
         "src/content_scripts/platforms/copilot.js"
       ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["http://localhost:5173/*"],
+      "js": ["src/content_scripts/auth_bridge.js"],
       "run_at": "document_idle"
     }
   ],

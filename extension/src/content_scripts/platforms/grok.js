@@ -1,60 +1,50 @@
 /**
- * PromptVault Pro – Grok (grok.x.com) platform injector
- * Inlined as content script (no ES module imports).
- * Attaches window.__pv_inject for paste_engine.js to call.
+ * PromptVault Pro – Grok platform injector
  */
 (function () {
   'use strict';
 
-  function inject(text) {
-    const selectors = [
-      'textarea[placeholder]',
-      'textarea[data-testid]',
-      'textarea',
-    ];
+  const SELECTORS = ['textarea[placeholder]', 'textarea[data-testid]', 'textarea'];
 
-    let el = null;
-    for (const sel of selectors) {
-      el = document.querySelector(sel);
-      if (el) break;
+  function findInput() {
+    for (const sel of SELECTORS) {
+      const el = document.querySelector(sel);
+      if (el) return el;
     }
+    return null;
+  }
 
-    if (!el) {
-      console.warn('[PV] Grok: no textarea found');
-      return false;
-    }
-
+  window.__pv_inject = function (text) {
+    const el = findInput();
+    if (!el) { console.warn('[PV] Grok: no textarea found'); return false; }
     try {
       el.focus();
-
-      // Use native setter for React compatibility
-      const nativeSetter = Object.getOwnPropertyDescriptor(
-        HTMLTextAreaElement.prototype,
-        'value'
-      );
-      if (nativeSetter && nativeSetter.set) {
-        nativeSetter.set.call(el, text);
-      } else {
-        el.value = text;
-      }
-
+      const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+      if (setter && setter.set) setter.set.call(el, text); else el.value = text;
       el.dispatchEvent(new Event('input', { bubbles: true }));
       el.dispatchEvent(new Event('change', { bubbles: true }));
       el.setSelectionRange(el.value.length, el.value.length);
       return true;
-    } catch (err) {
-      console.warn('[PV] Grok inject error, trying fallback:', err);
-      try {
-        el.value = text;
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.focus();
-        return true;
-      } catch (fallbackErr) {
-        console.error('[PV] Grok fallback inject error:', fallbackErr);
-        return false;
-      }
+    } catch {
+      try { el.value = text; el.dispatchEvent(new Event('input', { bubbles: true })); el.focus(); return true; }
+      catch { return false; }
     }
-  }
+  };
 
-  window.__pv_inject = inject;
+  window.__pv_read_input = function () {
+    const el = findInput();
+    return el ? (el.value || '') : '';
+  };
+
+  window.__pv_submit = function () {
+    const btns = [
+      document.querySelector('button[aria-label*="send" i]'),
+      document.querySelector('button[type="submit"]'),
+      document.querySelector('button[data-testid*="send" i]'),
+    ];
+    for (const btn of btns) {
+      if (btn && !btn.disabled) { btn.click(); return true; }
+    }
+    return false;
+  };
 })();

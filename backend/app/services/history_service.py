@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -36,12 +37,18 @@ async def get_history(
     page: int = 1,
     per_page: int = 20,
     platform: str | None = None,
+    from_dt: datetime | None = None,
+    to_dt: datetime | None = None,
 ) -> HistoryListResponse:
     per_page = min(per_page, 100)
     query = select(PromptHistory).where(PromptHistory.user_id == user_id)
 
     if platform:
         query = query.where(PromptHistory.platform == platform)
+    if from_dt:
+        query = query.where(PromptHistory.used_at >= from_dt)
+    if to_dt:
+        query = query.where(PromptHistory.used_at <= to_dt)
 
     count_query = select(func.count()).select_from(query.subquery())
     total_result = await db.execute(count_query)
@@ -76,6 +83,24 @@ async def get_history_by_id(
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="History record not found")
     return HistoryResponse.model_validate(record)
+
+
+async def delete_single_record(
+    db: AsyncSession,
+    history_id: UUID,
+    user_id: UUID,
+) -> None:
+    result = await db.execute(
+        select(PromptHistory).where(
+            PromptHistory.id == history_id,
+            PromptHistory.user_id == user_id,
+        )
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="History record not found")
+    await db.delete(record)
+    await db.flush()
 
 
 async def clear_history(

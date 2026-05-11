@@ -59,6 +59,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         password: payload.password,
       });
       tokenStore.set(data.access_token);
+      window.dispatchEvent(new CustomEvent('PV_AUTH_SYNC', { detail: { token: data.access_token } }));
       const user = await api.get<User>('/auth/me');
       set({ user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err: unknown) {
@@ -75,6 +76,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const data = await api.post<AuthResponse>('/auth/register', payload);
       tokenStore.set(data.access_token);
+      window.dispatchEvent(new CustomEvent('PV_AUTH_SYNC', { detail: { token: data.access_token } }));
       const user = await api.get<User>('/auth/me');
       set({ user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err: unknown) {
@@ -93,6 +95,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Ignore network errors on logout
     } finally {
       tokenStore.clear();
+      window.dispatchEvent(new CustomEvent('PV_AUTH_LOGOUT'));
       set({ user: null, isAuthenticated: false, error: null });
     }
   },
