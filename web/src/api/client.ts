@@ -6,7 +6,7 @@ import axios, {
   AxiosError,
 } from 'axios';
 
-const API_BASE_URL = ((import.meta as { env: Record<string, string> }).env.VITE_API_URL || 'http://localhost:8000') + '/v1';
+const API_BASE_URL = ((import.meta as unknown as { env: Record<string, string> }).env.VITE_API_URL || 'http://localhost:8000') + '/v1';
 
 // ─── Type Definitions ────────────────────────────────────────────────────────
 

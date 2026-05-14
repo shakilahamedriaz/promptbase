@@ -36,13 +36,13 @@ interface HistoryResponse {
 type DateRange = '7d' | '30d' | '90d' | 'custom';
 
 const PLATFORM_COLORS: Record<string, string> = {
-  chatgpt: 'bg-green-500/10 text-green-400',
-  claude: 'bg-orange-500/10 text-orange-400',
-  gemini: 'bg-blue-500/10 text-blue-400',
-  perplexity: 'bg-purple-500/10 text-purple-400',
-  grok: 'bg-gray-500/10 text-gray-400',
-  copilot: 'bg-sky-500/10 text-sky-400',
-  other: 'bg-gray-700/50 text-gray-500',
+  chatgpt: 'bg-green-50 text-green-700',
+  claude: 'bg-orange-50 text-orange-700',
+  gemini: 'bg-blue-50 text-blue-700',
+  perplexity: 'bg-purple-50 text-purple-700',
+  grok: 'bg-gray-100 text-gray-600',
+  copilot: 'bg-sky-50 text-sky-700',
+  other: 'bg-gray-100 text-gray-500',
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -145,12 +145,12 @@ export function HistoryPage() {
   return (
     <div className="flex h-full flex-col">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-800 bg-gray-900 px-6 py-4">
+      <div className="border-b bg-white px-6 py-5" style={{ borderColor: 'var(--color-border)' }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <ClockIcon className="h-6 w-6 text-brand-400" />
+            <ClockIcon className="h-6 w-6 text-brand-500" />
             <div>
-              <h1 className="text-xl font-bold text-white">Usage History</h1>
+              <h1 className="text-[17px] font-bold tracking-tight text-gray-900">Usage History</h1>
               <p className="text-sm text-gray-400">{total.toLocaleString()} entries</p>
             </div>
           </div>
@@ -158,10 +158,10 @@ export function HistoryPage() {
             <button
               onClick={() => setShowFilters((v) => !v)}
               className={clsx(
-                'flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors',
+                'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors',
                 showFilters
-                  ? 'border-brand-500 bg-brand-600/20 text-brand-400'
-                  : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600 hover:text-white',
+                  ? 'border-brand-300 bg-brand-50 text-brand-600'
+                  : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700',
               )}
             >
               <FunnelIcon className="h-4 w-4" />
@@ -192,7 +192,7 @@ export function HistoryPage() {
                     'mr-1 rounded-full px-3 py-1 text-xs font-medium transition-colors',
                     dateRange === r
                       ? 'bg-brand-600 text-white'
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white',
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700',
                   )}
                 >
                   {r === '7d' ? 'Last 7 days' : r === '30d' ? 'Last 30 days' : 'Last 90 days'}
@@ -206,7 +206,7 @@ export function HistoryPage() {
               <select
                 value={platformFilter}
                 onChange={(e) => { setPlatformFilter(e.target.value); setPage(1); }}
-                className="rounded-lg border border-gray-700 bg-gray-800 px-2 py-1 text-xs text-gray-300 focus:border-brand-500 focus:outline-none"
+                className="rounded-xl border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-brand-400 focus:outline-none"
               >
                 <option value="">All platforms</option>
                 {platforms.map((p) => (
@@ -219,42 +219,42 @@ export function HistoryPage() {
       </div>
 
       {/* ── Table ───────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--color-bg)' }}>
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-14 rounded-lg bg-gray-800 animate-pulse" />
+              <div key={i} className="h-14 rounded-xl bg-gray-100 animate-pulse" />
             ))}
           </div>
         ) : entries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <ClockIcon className="mb-4 h-16 w-16 text-gray-700" />
-            <p className="text-lg font-medium text-gray-300">No history yet</p>
-            <p className="mt-1 text-sm text-gray-500">
+            <ClockIcon className="mb-4 h-16 w-16 text-gray-200" />
+            <p className="text-lg font-medium text-gray-700">No history yet</p>
+            <p className="mt-1 text-sm text-gray-400">
               Start using prompts from your library to see history here.
             </p>
           </div>
         ) : (
           <>
-            <div className="overflow-hidden rounded-xl border border-gray-800">
+            <div className="overflow-hidden rounded-[14px] border shadow-card" style={{ borderColor: 'var(--color-border)' }}>
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-800 bg-gray-900">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Prompt Snippet</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Platform</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Refined?</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-400">Actions</th>
+                  <tr className="border-b" style={{ background: 'var(--color-sidebar)', borderColor: 'var(--color-border)' }}>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Prompt Snippet</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Platform</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Refined?</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800">
+                <tbody className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
                   {entries.map((entry) => (
-                    <tr key={entry.id} className="bg-gray-900 hover:bg-gray-800/50 transition-colors">
+                    <tr key={entry.id} className="bg-white hover:bg-brand-50/30 transition-colors">
                       <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-400">
                         {format(new Date(entry.used_at), 'MMM d, yyyy HH:mm')}
                       </td>
                       <td className="px-4 py-3">
-                        <p className="max-w-sm truncate text-sm text-gray-200">
+                        <p className="max-w-sm truncate text-sm text-gray-700">
                           {entry.body_snapshot}
                         </p>
                       </td>
@@ -270,18 +270,18 @@ export function HistoryPage() {
                       </td>
                       <td className="px-4 py-3">
                         {entry.was_refined ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-brand-400">
+                          <span className="inline-flex items-center gap-1 text-xs text-brand-600">
                             <SparklesIcon className="h-3.5 w-3.5" /> Yes
                           </span>
                         ) : (
-                          <span className="text-xs text-gray-600">—</span>
+                          <span className="text-xs text-gray-300">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleReuse(entry.body_snapshot)}
-                            className="rounded p-1.5 text-gray-500 hover:bg-gray-700 hover:text-gray-200 transition-colors"
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
                             title="Copy & re-use"
                           >
                             <ArrowUturnLeftIcon className="h-4 w-4" />
@@ -289,14 +289,14 @@ export function HistoryPage() {
                           <button
                             onClick={() => handlePinToLibrary(entry)}
                             disabled={isSaving === entry.id}
-                            className="rounded p-1.5 text-gray-500 hover:bg-gray-700 hover:text-gray-200 transition-colors disabled:opacity-50"
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors disabled:opacity-50"
                             title="Save to Library"
                           >
                             <BookmarkIcon className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(entry.id)}
-                            className="rounded p-1.5 text-gray-500 hover:bg-red-900/30 hover:text-red-400 transition-colors"
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                             title="Delete entry"
                           >
                             <TrashIcon className="h-4 w-4" />
@@ -312,7 +312,7 @@ export function HistoryPage() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="mt-4 flex items-center justify-between">
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-400">
                   Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)} of {total.toLocaleString()}
                 </p>
                 <div className="flex items-center gap-2">
@@ -324,7 +324,7 @@ export function HistoryPage() {
                   >
                     Previous
                   </Button>
-                  <span className="text-sm text-gray-400">
+                  <span className="text-sm text-gray-500">
                     {page} / {totalPages}
                   </span>
                   <Button
@@ -355,14 +355,14 @@ export function HistoryPage() {
           </>
         }
       >
-        <p className="text-sm text-gray-300">
+        <p className="text-sm text-gray-600">
           This will permanently delete all{' '}
-          <span className="font-semibold text-white">{total.toLocaleString()} history entries</span>.
+          <span className="font-semibold text-gray-900">{total.toLocaleString()} history entries</span>.
           This action cannot be undone.
         </p>
-        <div className="mt-3 flex items-start gap-2 rounded-lg bg-yellow-900/20 border border-yellow-800 px-3 py-2">
-          <XMarkIcon className="mt-0.5 h-4 w-4 shrink-0 text-yellow-400" />
-          <p className="text-xs text-yellow-300">
+        <div className="mt-3 flex items-start gap-2 rounded-xl bg-yellow-50 border border-yellow-100 px-3 py-2">
+          <XMarkIcon className="mt-0.5 h-4 w-4 shrink-0 text-yellow-500" />
+          <p className="text-xs text-yellow-700">
             This does not delete prompts in your Library — only usage history.
           </p>
         </div>

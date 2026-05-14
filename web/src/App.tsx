@@ -11,6 +11,7 @@ import { RefinerPage } from '@/features/refiner/RefinerPage';
 import { HistoryPage } from '@/features/history/HistoryPage';
 import { AnalyticsPage } from '@/features/analytics/AnalyticsPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
+import { MarketplacePage } from '@/features/marketplace/MarketplacePage';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
 import { tokenStore } from '@/api/client';
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="refiner" element={<RefinerPage />} />
           <Route path="history" element={<HistoryPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="marketplace" element={<MarketplacePage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 

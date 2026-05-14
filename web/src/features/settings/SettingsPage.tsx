@@ -23,10 +23,10 @@ import { showToast } from '@/components/Toast';
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-      <div className="mb-5 border-b border-gray-800 pb-4">
-        <h2 className="text-base font-semibold text-white">{title}</h2>
-        {description && <p className="mt-1 text-sm text-gray-400">{description}</p>}
+    <div className="rounded-[14px] border bg-white p-6 shadow-card" style={{ borderColor: 'var(--color-border)' }}>
+      <div className="mb-5 border-b pb-4" style={{ borderColor: 'var(--color-border)' }}>
+        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+        {description && <p className="mt-1 text-sm text-gray-500">{description}</p>}
       </div>
       {children}
     </div>
@@ -78,17 +78,17 @@ function ApiKeyField({ label, provider, currentKey, onSave, isSaving }: ApiKeyFi
             readOnly={!isEditing}
             placeholder={isEditing ? `Paste your ${label} API key` : 'Not configured'}
             className={clsx(
-              'block w-full rounded-lg border bg-gray-800 px-3 py-2.5 pr-10 text-sm placeholder-gray-600 focus:outline-none focus:ring-1',
+              'block w-full rounded-xl border px-3 py-2.5 pr-10 text-sm placeholder-gray-400 focus:outline-none focus:ring-2',
               isEditing
-                ? 'border-brand-500 text-white focus:ring-brand-500'
-                : 'border-gray-700 text-gray-500 cursor-default',
+                ? 'border-brand-400 bg-white text-gray-900 focus:ring-brand-100'
+                : 'border-gray-200 bg-gray-50 text-gray-400 cursor-default',
             )}
           />
           {isEditing && (
             <button
               type="button"
               onClick={() => setShowKey((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
               {showKey ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
             </button>
@@ -218,32 +218,32 @@ export function SettingsPage() {
   return (
     <div className="flex h-full flex-col">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-800 bg-gray-900 px-6 py-4">
-        <h1 className="text-xl font-bold text-white">Settings</h1>
+      <div className="border-b bg-white px-6 py-5" style={{ borderColor: 'var(--color-border)' }}>
+        <h1 className="text-[17px] font-bold tracking-tight text-gray-900">Settings</h1>
         <p className="text-sm text-gray-400">Manage your account and preferences</p>
       </div>
 
       {/* ── Body ────────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--color-bg)' }}>
         <div className="mx-auto max-w-2xl space-y-6">
 
           {/* Appearance */}
           <Section title="Appearance" description="Choose your preferred color theme.">
             <div className="flex gap-3">
-              {(['dark', 'light'] as const).map((t) => (
+              {(['light', 'dark'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTheme(t)}
                   className={clsx(
-                    'flex flex-1 items-center justify-center gap-3 rounded-lg border-2 p-4 text-sm font-medium transition-colors',
+                    'flex flex-1 items-center justify-center gap-3 rounded-xl border-2 p-4 text-sm font-medium transition-colors',
                     theme === t
-                      ? 'border-brand-500 bg-brand-600/10 text-brand-300'
-                      : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600',
+                      ? 'border-brand-400 bg-brand-50 text-brand-700'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300',
                   )}
                 >
                   {t === 'dark' ? <MoonIcon className="h-5 w-5" /> : <SunIcon className="h-5 w-5" />}
                   {t.charAt(0).toUpperCase() + t.slice(1)} Mode
-                  {theme === t && <CheckIcon className="h-4 w-4 text-brand-400" />}
+                  {theme === t && <CheckIcon className="h-4 w-4 text-brand-600" />}
                 </button>
               ))}
             </div>
@@ -254,21 +254,21 @@ export function SettingsPage() {
             <div className="space-y-4">
               {/* Avatar */}
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-700 overflow-hidden">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-100 overflow-hidden">
                   {user?.avatar_url ? (
                     <img src={user.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
                   ) : (
-                    <span className="text-xl font-bold text-brand-200">
+                    <span className="text-xl font-bold text-brand-600">
                       {user?.display_name?.charAt(0).toUpperCase() || '?'}
                     </span>
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white">{user?.display_name}</p>
-                  <p className="text-sm text-gray-400">{user?.email}</p>
+                  <p className="text-sm font-medium text-gray-900">{user?.display_name}</p>
+                  <p className="text-sm text-gray-500">{user?.email}</p>
                   <span className={clsx(
                     'mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
-                    user?.plan === 'pro' ? 'bg-brand-600/20 text-brand-300' : 'bg-gray-700 text-gray-400',
+                    user?.plan === 'pro' ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-500',
                   )}>
                     {(user?.plan || 'free').toUpperCase()}
                   </span>
@@ -277,7 +277,7 @@ export function SettingsPage() {
 
               {/* Display name */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Display Name
                 </label>
                 <div className="flex gap-2">
@@ -285,7 +285,7 @@ export function SettingsPage() {
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="flex-1 rounded-xl border bg-white px-3 py-2.5 text-[13px] text-gray-800 focus:border-brand-400 focus:outline-none transition-colors" style={{ borderColor: 'var(--color-border)' }}
                   />
                   <Button
                     variant="primary"
@@ -301,7 +301,7 @@ export function SettingsPage() {
 
               {/* Email (read-only) */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Email Address
                 </label>
                 <div className="flex items-center gap-2">
@@ -309,11 +309,11 @@ export function SettingsPage() {
                     type="email"
                     value={user?.email || ''}
                     readOnly
-                    className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-gray-500 cursor-default"
+                    className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-400 cursor-default"
                   />
-                  <UserCircleIcon className="h-5 w-5 text-gray-600" />
+                  <UserCircleIcon className="h-5 w-5 text-gray-300" />
                 </div>
-                <p className="mt-1 text-xs text-gray-600">Email cannot be changed here.</p>
+                <p className="mt-1 text-xs text-gray-400">Email cannot be changed here.</p>
               </div>
             </div>
           </Section>
@@ -324,9 +324,9 @@ export function SettingsPage() {
             description="Connect your AI provider keys for custom model access (Pro feature)."
           >
             <div className="space-y-5">
-              <div className="flex items-start gap-2 rounded-lg bg-brand-600/10 border border-brand-800 px-4 py-3">
-                <KeyIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-400" />
-                <p className="text-xs text-brand-300">
+              <div className="flex items-start gap-2 rounded-xl bg-brand-50 border border-brand-100 px-4 py-3">
+                <KeyIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
+                <p className="text-xs text-brand-700">
                   Keys are stored encrypted and never logged. Bring your own keys for unlimited AI refinements.
                 </p>
               </div>
@@ -355,7 +355,7 @@ export function SettingsPage() {
             <div className="space-y-4">
               {/* Export */}
               <div>
-                <p className="text-sm font-medium text-gray-300 mb-2">Export Prompts</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">Export Prompts</p>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -376,17 +376,17 @@ export function SettingsPage() {
                     Export CSV
                   </Button>
                 </div>
-                <p className="mt-1.5 text-xs text-gray-600">
+                <p className="mt-1.5 text-xs text-gray-400">
                   Download all your prompts as a JSON or CSV file.
                 </p>
               </div>
 
               {/* Divider */}
-              <div className="border-t border-gray-800" />
+              <div className="border-t" style={{ borderColor: 'var(--color-border)' }} />
 
               {/* Import */}
               <div>
-                <p className="text-sm font-medium text-gray-300 mb-2">Import Prompts</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">Import Prompts</p>
                 <input
                   ref={importFileRef}
                   type="file"
@@ -404,7 +404,7 @@ export function SettingsPage() {
                 >
                   Upload JSON or CSV
                 </Button>
-                <p className="mt-1.5 text-xs text-gray-600">
+                <p className="mt-1.5 text-xs text-gray-400">
                   Supported formats: JSON (exported from PromptVault) or CSV with title/body columns.
                   Duplicate prompts will be skipped.
                 </p>
@@ -414,11 +414,11 @@ export function SettingsPage() {
 
           {/* Danger Zone */}
           <Section title="Danger Zone">
-            <div className="rounded-lg border border-red-900 bg-red-900/10 p-4">
+            <div className="rounded-xl border border-red-100 bg-red-50 p-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium text-red-300">Delete Account</p>
-                  <p className="mt-0.5 text-xs text-red-400/70">
+                  <p className="text-sm font-medium text-red-700">Delete Account</p>
+                  <p className="mt-0.5 text-xs text-red-500">
                     Permanently delete your account and all data. This cannot be undone.
                   </p>
                 </div>
@@ -458,20 +458,20 @@ export function SettingsPage() {
         }
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-300">
+          <p className="text-sm text-gray-600">
             This will permanently delete your account, all prompts, history, and settings.
-            <span className="font-semibold text-white"> There is no way to recover this data.</span>
+            <span className="font-semibold text-gray-900"> There is no way to recover this data.</span>
           </p>
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">
-              Type <span className="font-mono font-bold text-red-400">DELETE</span> to confirm
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">
+              Type <span className="font-mono font-bold text-red-500">DELETE</span> to confirm
             </label>
             <input
               type="text"
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               placeholder="DELETE"
-              className="block w-full rounded-lg border border-red-800 bg-gray-800 px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              className="block w-full rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-100"
             />
           </div>
         </div>

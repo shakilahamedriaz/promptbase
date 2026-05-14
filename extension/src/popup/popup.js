@@ -1,235 +1,282 @@
-/**
- * PromptVault Pro – popup.js
- * Full popup UI logic as an ES module.
- * Communicates with the background service worker via chrome.runtime.sendMessage.
- */
+/** PromptVault Pro – popup.js */
 
-// ─────────────────────────────────────────────
-// Messaging helpers
-// ─────────────────────────────────────────────
+// ─── Messaging ────────────────────────────────────────────────────────────────
 
 function sendMsg(type, payload = null) {
   return new Promise((resolve, reject) => {
-    const msg = payload !== null ? { type, payload } : { type };
-    chrome.runtime.sendMessage(msg, (response) => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-      } else {
-        resolve(response);
+    chrome.runtime.sendMessage(
+      payload !== null ? { type, payload } : { type },
+      (res) => {
+        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+        else resolve(res);
       }
-    });
+    );
   });
 }
 
-// ─────────────────────────────────────────────
-// State
-// ─────────────────────────────────────────────
+// ─── State ────────────────────────────────────────────────────────────────────
 
-let allPrompts = [];        // full list from storage
-let filteredPrompts = [];   // currently displayed list
-let favoritesOnly = false;
-let editingPromptId = null; // null = new, string = editing
-let pendingPasteText = '';  // text waiting to be pasted after variable fill
-let toastTimer = null;
+let allPrompts     = [];
+let favoritesOnly  = false;
+let editingId      = null;
+let pendingPaste   = '';
+let toastTimer     = null;
+let refineStyle    = 'professional';
+let currentTab     = 'library';
+let isDark         = false;
 
-// ─────────────────────────────────────────────
-// DOM References
-// ─────────────────────────────────────────────
+// ─── DOM ─────────────────────────────────────────────────────────────────────
 
 const $ = (id) => document.getElementById(id);
 
 const dom = {
-  platformBadge: $('platform-badge'),
-  themeToggle: $('theme-toggle'),
-  searchInput: $('search-input'),
-  addBtn: $('add-btn'),
-  tabs: document.querySelectorAll('.tab'),
-  tabContents: document.querySelectorAll('.tab-content'),
+  // Header
+  themeToggle:    $('theme-toggle'),
+  themeIconLight: $('theme-icon-light'),
+  themeIconDark:  $('theme-icon-dark'),
+  platformChip:   $('platform-chip'),
+  // Search
+  searchRow:      $('search-row'),
+  searchInput:    $('search-input'),
+  addBtn:         $('add-btn'),
+  // Tabs
+  tabs:           document.querySelectorAll('.tab'),
+  tabContents:    document.querySelectorAll('.tab-content'),
   // Library
   categoryFilter: $('category-filter'),
-  sortSelect: $('sort-select'),
-  favFilter: $('fav-filter'),
-  promptList: $('prompt-list'),
-  emptyState: $('empty-state'),
-  emptyAddBtn: $('empty-add-btn'),
+  sortSelect:     $('sort-select'),
+  favFilter:      $('fav-filter'),
+  promptList:     $('prompt-list'),
+  emptyState:     $('empty-state'),
+  templateGrid:   $('template-grid'),
+  emptyAddBtn:    $('empty-add-btn'),
   // History
-  historyList: $('history-list'),
-  historyEmpty: $('history-empty'),
+  historyList:    $('history-list'),
+  historyEmpty:   $('history-empty'),
+  // Refine
+  refineInput:    $('refine-input'),
+  refineGrabBtn:  $('refine-grab-btn'),
+  btnRefine:      $('btn-refine'),
+  styleChips:     document.querySelectorAll('.style-chip'),
+  customWrap:     $('custom-instruction-wrap'),
+  customInstr:    $('custom-instruction'),
+  refineResult:   $('refine-result'),
+  scoreBefore:    $('score-before'),
+  scoreAfter:     $('score-after'),
+  scoreDelta:     $('score-delta'),
+  refineExp:      $('refine-explanation'),
+  diffBefore:     $('diff-before'),
+  diffAfter:      $('diff-after'),
+  refineOutput:   $('refine-output'),
+  refineCopyBtn:  $('refine-copy-btn'),
+  refineInsertBtn:$('refine-insert-btn'),
+  refineSaveBtn:  $('refine-save-btn'),
   // Settings
-  backendUrlInput: $('backend-url-input'),
-  authTokenInput: $('auth-token-input'),
-  autoSubmitToggle: $('auto-submit-toggle'),
+  userCard:       $('user-card'),
+  userAvatar:     $('user-avatar'),
+  userEmail:      $('user-email'),
+  signOutBtn:     $('sign-out-btn'),
+  signInCta:      $('sign-in-cta'),
+  signInBtn:      $('sign-in-btn'),
   darkModeToggle: $('dark-mode-toggle'),
-  saveSettingsBtn: $('save-settings-btn'),
-  syncNowBtn: $('sync-now-btn'),
-  settingsStatus: $('settings-status'),
+  autoSubmitToggle:$('auto-submit-toggle'),
+  syncNowBtn:     $('sync-now-btn'),
+  advancedToggle: $('advanced-toggle'),
+  advancedBody:   $('advanced-body'),
+  backendUrlInput:$('backend-url-input'),
+  saveBackendBtn: $('save-backend-btn'),
   // Modal
-  modal: $('modal'),
-  modalTitle: $('modal-title'),
-  modalClose: $('modal-close'),
-  promptTitleInput: $('prompt-title'),
-  promptBodyInput: $('prompt-body'),
+  modal:          $('modal'),
+  modalTitle:     $('modal-title'),
+  modalClose:     $('modal-close'),
+  promptTitle:    $('prompt-title'),
+  promptBody:     $('prompt-body'),
   promptCategory: $('prompt-category'),
-  promptTags: $('prompt-tags'),
-  charCount: $('char-count'),
-  modalCancel: $('modal-cancel'),
-  modalSave: $('modal-save'),
+  promptTags:     $('prompt-tags'),
+  charCount:      $('char-count'),
+  modalCancel:    $('modal-cancel'),
+  modalSave:      $('modal-save'),
   // Var modal
-  varModal: $('var-modal'),
-  varModalClose: $('var-modal-close'),
-  varFields: $('var-fields'),
-  varCancel: $('var-cancel'),
-  varInsert: $('var-insert'),
+  varModal:       $('var-modal'),
+  varModalClose:  $('var-modal-close'),
+  varFields:      $('var-fields'),
+  varCancel:      $('var-cancel'),
+  varInsert:      $('var-insert'),
   // Toast
-  toast: $('toast'),
+  toast:          $('toast'),
 };
 
-// ─────────────────────────────────────────────
-// Init
-// ─────────────────────────────────────────────
+// ─── Templates (empty state) ──────────────────────────────────────────────────
+
+const STARTER_TEMPLATES = [
+  {
+    icon: '✍️',
+    name: 'Blog outline',
+    body: 'Write a detailed outline for a blog post about {{topic}} targeting {{audience}}. Include an introduction, 5 main sections with subpoints, and a conclusion.',
+    category: 'writing',
+    tags: ['writing', 'blog'],
+  },
+  {
+    icon: '🐛',
+    name: 'Debug code',
+    body: 'You are a senior {{language}} developer. Review the following code, identify all bugs and issues, explain each problem clearly, and provide a corrected version:\n\n{{code}}',
+    category: 'coding',
+    tags: ['coding', 'debug'],
+  },
+  {
+    icon: '📧',
+    name: 'Professional email',
+    body: 'Write a professional email to {{recipient}} about {{subject}}. Tone: {{tone}}. Keep it under 150 words with a clear call to action.',
+    category: 'writing',
+    tags: ['email', 'professional'],
+  },
+  {
+    icon: '🔍',
+    name: 'Explain concept',
+    body: 'Explain {{concept}} to a {{audience}} using simple language and 2–3 relatable analogies. Avoid jargon. End with a one-sentence summary.',
+    category: 'general',
+    tags: ['explain', 'education'],
+  },
+];
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadTheme();
   detectPlatform();
+  renderTemplateCards();
   await loadPrompts();
   bindEvents();
   listenForBackgroundMessages();
 });
 
-// ─────────────────────────────────────────────
-// Theme
-// ─────────────────────────────────────────────
+// ─── Theme / Dark Mode ────────────────────────────────────────────────────────
 
 async function loadTheme() {
-  const res = await sendMsg('GET_SETTINGS').catch(() => ({ settings: { darkMode: true } }));
-  const isDark = res?.settings?.darkMode !== false;
+  try {
+    const res = await sendMsg('GET_SETTINGS');
+    isDark = res?.settings?.darkMode === true;
+  } catch {
+    isDark = false;
+  }
   applyTheme(isDark);
-  dom.darkModeToggle.checked = isDark;
 }
 
-function applyTheme(isDark) {
-  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-  dom.themeToggle.textContent = isDark ? '☀' : '🌙';
+function applyTheme(dark) {
+  isDark = dark;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  dom.themeIconLight.classList.toggle('hidden', dark);
+  dom.themeIconDark.classList.toggle('hidden', !dark);
+  if (dom.darkModeToggle) dom.darkModeToggle.checked = dark;
 }
 
 async function toggleTheme() {
-  const currentIsDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  const newIsDark = !currentIsDark;
-  applyTheme(newIsDark);
-  dom.darkModeToggle.checked = newIsDark;
-  await sendMsg('SET_SETTING', { key: 'dark_mode', value: newIsDark });
+  applyTheme(!isDark);
+  await sendMsg('SET_SETTING', { key: 'dark_mode', value: isDark }).catch(() => {});
 }
 
-// ─────────────────────────────────────────────
-// Platform Detection
-// ─────────────────────────────────────────────
+// ─── Platform Detection ───────────────────────────────────────────────────────
 
 async function detectPlatform() {
   try {
-    const tabs = await new Promise((resolve, reject) => {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-        else resolve(tabs);
-      });
-    });
-
-    const tab = tabs?.[0];
-    if (!tab?.url) return;
-
-    const url = tab.url;
-    let platform = 'unknown';
-
-    if (url.includes('chat.openai.com') || url.includes('chatgpt.com')) platform = 'ChatGPT';
-    else if (url.includes('claude.ai')) platform = 'Claude';
-    else if (url.includes('gemini.google.com')) platform = 'Gemini';
-    else if (url.includes('perplexity.ai')) platform = 'Perplexity';
-    else if (url.includes('grok.com') || url.includes('grok.x.com')) platform = 'Grok';
-    else if (url.includes('copilot.microsoft.com')) platform = 'Copilot';
-
-    if (platform !== 'unknown') {
-      dom.platformBadge.textContent = platform;
+    const tabs = await new Promise((res, rej) =>
+      chrome.tabs.query({ active: true, currentWindow: true }, (t) =>
+        chrome.runtime.lastError ? rej(new Error(chrome.runtime.lastError.message)) : res(t)
+      )
+    );
+    const url = tabs?.[0]?.url || '';
+    const map = [
+      [['chat.openai.com', 'chatgpt.com'], 'ChatGPT'],
+      [['claude.ai'], 'Claude'],
+      [['gemini.google.com'], 'Gemini'],
+      [['perplexity.ai'], 'Perplexity'],
+      [['grok.com', 'grok.x.com'], 'Grok'],
+      [['copilot.microsoft.com'], 'Copilot'],
+    ];
+    for (const [hosts, name] of map) {
+      if (hosts.some((h) => url.includes(h))) {
+        dom.platformChip.textContent = name;
+        dom.platformChip.classList.remove('hidden');
+        break;
+      }
     }
-  } catch (err) {
-    // Non-critical
-    console.warn('[PV] Could not detect platform:', err.message);
-  }
+  } catch { /* non-critical */ }
 }
 
-// ─────────────────────────────────────────────
-// Prompts – Load & Render
-// ─────────────────────────────────────────────
+// ─── Library ──────────────────────────────────────────────────────────────────
 
 async function loadPrompts() {
   try {
     const res = await sendMsg('GET_PROMPTS');
     allPrompts = res?.prompts || [];
-  } catch (err) {
-    console.error('[PV] loadPrompts:', err);
-    allPrompts = [];
-  }
+  } catch { allPrompts = []; }
   applyFiltersAndRender();
 }
 
 function applyFiltersAndRender() {
   let list = [...allPrompts];
-
-  // Search filter
-  const query = dom.searchInput.value.trim().toLowerCase();
-  if (query) {
-    list = list.filter((p) => {
-      const inTitle = p.title.toLowerCase().includes(query);
-      const inBody = p.body.toLowerCase().includes(query);
-      const inTags = (p.tags || []).some((t) => t.toLowerCase().includes(query));
-      return inTitle || inBody || inTags;
-    });
+  const q = dom.searchInput.value.trim().toLowerCase();
+  if (q) {
+    list = list.filter((p) =>
+      p.title.toLowerCase().includes(q) ||
+      p.body.toLowerCase().includes(q) ||
+      (p.tags || []).some((t) => t.toLowerCase().includes(q))
+    );
   }
-
-  // Category filter
   const cat = dom.categoryFilter.value;
-  if (cat) {
-    list = list.filter((p) => p.category === cat);
-  }
+  if (cat) list = list.filter((p) => p.category === cat);
+  if (favoritesOnly) list = list.filter((p) => p.is_favorite);
 
-  // Favorites filter
-  if (favoritesOnly) {
-    list = list.filter((p) => p.is_favorite);
-  }
-
-  // Sort
   const sort = dom.sortSelect.value;
-  list = sortPrompts(list, sort);
+  list = list.slice().sort((a, b) => {
+    if (sort === 'alpha')     return a.title.localeCompare(b.title);
+    if (sort === 'most_used') return (b.use_count || 0) - (a.use_count || 0);
+    if (sort === 'created')   return new Date(b.created_at) - new Date(a.created_at);
+    return new Date(b.updated_at) - new Date(a.updated_at);
+  });
 
-  filteredPrompts = list;
   renderPrompts(list);
-}
-
-function sortPrompts(list, mode) {
-  switch (mode) {
-    case 'alpha':
-      return [...list].sort((a, b) => a.title.localeCompare(b.title));
-    case 'most_used':
-      return [...list].sort((a, b) => (b.use_count || 0) - (a.use_count || 0));
-    case 'created':
-      return [...list].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    case 'updated':
-    default:
-      return [...list].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-  }
 }
 
 function renderPrompts(prompts) {
   dom.promptList.innerHTML = '';
-
   if (prompts.length === 0) {
     dom.emptyState.classList.remove('hidden');
     return;
   }
-
   dom.emptyState.classList.add('hidden');
+  for (const p of prompts) dom.promptList.appendChild(createPromptCard(p));
+}
 
-  for (const prompt of prompts) {
-    const card = createPromptCard(prompt);
-    dom.promptList.appendChild(card);
+function renderTemplateCards() {
+  dom.templateGrid.innerHTML = '';
+  for (const t of STARTER_TEMPLATES) {
+    const card = document.createElement('div');
+    card.className = 'template-card';
+    card.innerHTML = `
+      <div class="template-card-icon">${t.icon}</div>
+      <div class="template-card-name">${escHtml(t.name)}</div>
+      <div class="template-card-preview">${escHtml(t.body.replace(/\{\{[^}]+\}\}/g, '…'))}</div>
+      <div class="template-card-tag">${escHtml(t.category)}</div>
+    `;
+    card.addEventListener('click', () => addTemplatePrompt(t));
+    dom.templateGrid.appendChild(card);
+  }
+}
+
+async function addTemplatePrompt(template) {
+  try {
+    await sendMsg('SAVE_PROMPT', {
+      title: template.name,
+      body: template.body,
+      category: template.category,
+      tags: template.tags,
+      variables: extractVariables(template.body),
+    });
+    await loadPrompts();
+    showToast(`"${template.name}" added to Library`, 'success');
+  } catch {
+    showToast('Failed to add template', 'error');
   }
 }
 
@@ -238,483 +285,496 @@ function createPromptCard(prompt) {
   card.className = 'prompt-card';
   card.dataset.id = prompt.id;
 
-  const bodyPreview = (prompt.body || '').slice(0, 80) + ((prompt.body || '').length > 80 ? '…' : '');
-
-  const tagsHtml = (prompt.tags || [])
-    .slice(0, 3)
-    .map((t) => `<span class="tag-pill">${escapeHtml(t)}</span>`)
-    .join('');
-
-  const favClass = prompt.is_favorite ? 'favorite active' : 'favorite';
-  const favTitle = prompt.is_favorite ? 'Remove from favorites' : 'Add to favorites';
+  const preview = (prompt.body || '').slice(0, 80) + ((prompt.body || '').length > 80 ? '…' : '');
+  const tagsHtml = (prompt.tags || []).slice(0, 3)
+    .map((t) => `<span class="tag-pill">${escHtml(t)}</span>`).join('');
+  const isFav = prompt.is_favorite;
 
   card.innerHTML = `
     <div class="prompt-card-header">
-      <span class="prompt-card-title" title="${escapeHtml(prompt.title)}">${escapeHtml(prompt.title || 'Untitled')}</span>
+      <span class="prompt-card-title" title="${escHtml(prompt.title)}">${escHtml(prompt.title || 'Untitled')}</span>
       <div class="prompt-card-actions">
-        <button class="card-action-btn paste" title="Insert prompt" data-action="paste">↑</button>
-        <button class="card-action-btn edit" title="Edit prompt" data-action="edit">✎</button>
-        <button class="card-action-btn ${favClass}" title="${favTitle}" data-action="favorite">★</button>
-        <button class="card-action-btn delete" title="Delete prompt" data-action="delete">✕</button>
+        <button class="card-action-btn paste" title="Insert (↵)" data-action="paste">
+          <svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M3 10h14M10 3l7 7-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="card-action-btn edit" title="Edit" data-action="edit">
+          <svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M13 3l4 4L7 17H3v-4L13 3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="card-action-btn favorite ${isFav ? 'active' : ''}" title="${isFav ? 'Unfavorite' : 'Favorite'}" data-action="favorite">
+          <svg width="11" height="11" viewBox="0 0 20 20" fill="${isFav ? 'currentColor' : 'none'}"><path d="M10 2l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 14.27l-4.77 2.51.91-5.32L2.27 7.62l5.34-.78L10 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="card-action-btn delete" title="Delete" data-action="delete">
+          <svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M4 7h12M8 7V5h4v2M9 10v5M11 10v5M6 7l1 10h6l1-10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
     </div>
-    <div class="prompt-card-body">${escapeHtml(bodyPreview)}</div>
+    <div class="prompt-card-body">${escHtml(preview)}</div>
     <div class="prompt-card-footer">
       <div class="prompt-card-tags">${tagsHtml}</div>
-      <span class="category-pill">${escapeHtml(prompt.category || 'general')}</span>
-      <span class="use-count" title="Times used">${prompt.use_count || 0}×</span>
-    </div>
-  `;
+      <span class="category-pill">${escHtml(prompt.category || 'general')}</span>
+      <span class="use-count">${prompt.use_count || 0}×</span>
+    </div>`;
 
-  // Event delegation on buttons
   card.querySelectorAll('.card-action-btn').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const action = btn.dataset.action;
-      handleCardAction(action, prompt);
-    });
+    btn.addEventListener('click', (e) => { e.stopPropagation(); handleCardAction(btn.dataset.action, prompt); });
   });
-
-  // Click card body to paste
   card.addEventListener('click', () => handleCardAction('paste', prompt));
-
   return card;
 }
 
-// ─────────────────────────────────────────────
-// Card Actions
-// ─────────────────────────────────────────────
+// ─── Card Actions ─────────────────────────────────────────────────────────────
 
 async function handleCardAction(action, prompt) {
-  switch (action) {
-    case 'paste':
-      await handlePaste(prompt);
-      break;
-    case 'edit':
-      openEditModal(prompt);
-      break;
-    case 'favorite':
-      await toggleFavorite(prompt);
-      break;
-    case 'delete':
-      await handleDelete(prompt);
-      break;
-  }
+  if (action === 'paste')    await handlePaste(prompt);
+  if (action === 'edit')     openEditModal(prompt);
+  if (action === 'favorite') await toggleFavorite(prompt);
+  if (action === 'delete')   await handleDelete(prompt);
 }
 
 async function handlePaste(prompt) {
-  const variables = extractVariables(prompt.body);
-
-  if (variables.length > 0) {
-    openVarModal(prompt, variables);
-  } else {
-    await pasteToActiveTab(prompt, prompt.body);
-  }
+  const vars = extractVariables(prompt.body);
+  vars.length ? openVarModal(prompt, vars) : await pasteToTab(prompt, prompt.body);
 }
 
-function extractVariables(text) {
-  const regex = /\{\{([^}]+)\}\}/g;
-  const found = new Set();
-  let match;
-  while ((match = regex.exec(text)) !== null) {
-    found.add(match[1].trim());
-  }
-  return Array.from(found);
-}
-
-const AI_HOSTS = [
-  'chat.openai.com', 'chatgpt.com',
-  'claude.ai',
-  'gemini.google.com',
-  'perplexity.ai',
-  'grok.com', 'grok.x.com',
-  'copilot.microsoft.com',
-];
+const AI_HOSTS = ['chat.openai.com','chatgpt.com','claude.ai','gemini.google.com','perplexity.ai','grok.com','grok.x.com','copilot.microsoft.com'];
 
 function isAiTab(url) {
-  if (!url) return false;
-  try {
-    const host = new URL(url).hostname;
-    return AI_HOSTS.some((h) => host === h || host.endsWith('.' + h));
-  } catch { return false; }
+  try { const h = new URL(url).hostname; return AI_HOSTS.some((a) => h === a || h.endsWith('.' + a)); }
+  catch { return false; }
 }
 
-async function pasteToActiveTab(prompt, text) {
-  // Get active tab
-  const tabs = await new Promise((resolve) => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (t) => resolve(t || []));
-  });
+async function pasteToTab(prompt, text) {
+  const tabs = await new Promise((r) => chrome.tabs.query({ active: true, currentWindow: true }, (t) => r(t || [])));
   const tab = tabs?.[0];
 
-  // If not on an AI page, skip injection and copy to clipboard silently
   if (!tab?.id || !isAiTab(tab.url)) {
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast('Copied! Open an AI site to paste directly.', 'info');
-    } catch {
-      showToast('Could not copy — open an AI site first.', 'error');
-    }
+    try { await navigator.clipboard.writeText(text); showToast('Copied! Open an AI site to paste.', 'info'); }
+    catch { showToast('Open an AI site first.', 'error'); }
     return;
   }
-
-  // Try to inject into the AI page
   try {
-    await new Promise((resolve, reject) => {
-      chrome.tabs.sendMessage(tab.id, { type: 'PASTE_PROMPT', text }, (res) => {
-        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-        else resolve(res);
-      });
-    });
-
+    await new Promise((res, rej) =>
+      chrome.tabs.sendMessage(tab.id, { type: 'PASTE_PROMPT', text }, (r) =>
+        chrome.runtime.lastError ? rej(new Error(chrome.runtime.lastError.message)) : res(r)
+      )
+    );
     await sendMsg('INCREMENT_USE_COUNT', { id: prompt.id });
     await sendMsg('LOG_HISTORY', {
       prompt_id: prompt.id,
       body_snapshot: text.slice(0, 500),
-      platform: dom.platformBadge.textContent.toLowerCase() || 'unknown',
+      platform: dom.platformChip.textContent.toLowerCase() || 'unknown',
       was_refined: false,
     });
     await loadPrompts();
     showToast('Prompt inserted!', 'success');
   } catch {
-    // Content script may not have loaded yet (page still loading) — fall back to clipboard
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast('Copied! Reload the AI page if the button is missing.', 'info');
-    } catch {
-      showToast('Could not insert prompt', 'error');
-    }
+    try { await navigator.clipboard.writeText(text); showToast('Copied! Reload the AI page if needed.', 'info'); }
+    catch { showToast('Could not insert prompt.', 'error'); }
   }
 }
 
 async function toggleFavorite(prompt) {
-  const newFav = !prompt.is_favorite;
   try {
-    await sendMsg('UPDATE_PROMPT', { id: prompt.id, changes: { is_favorite: newFav } });
+    await sendMsg('UPDATE_PROMPT', { id: prompt.id, changes: { is_favorite: !prompt.is_favorite } });
     await loadPrompts();
-    showToast(newFav ? 'Added to favorites' : 'Removed from favorites', 'success');
-  } catch (err) {
-    showToast('Failed to update favorite', 'error');
-  }
+    showToast(prompt.is_favorite ? 'Removed from favorites' : 'Added to favorites', 'success');
+  } catch { showToast('Failed to update', 'error'); }
 }
 
 async function handleDelete(prompt) {
-  const confirmed = window.confirm(`Delete "${prompt.title || 'this prompt'}"?`);
-  if (!confirmed) return;
-
+  if (!window.confirm(`Delete "${prompt.title || 'this prompt'}"?`)) return;
   try {
     await sendMsg('DELETE_PROMPT', { id: prompt.id });
     await loadPrompts();
-    showToast('Prompt deleted', 'success');
-  } catch (err) {
-    showToast('Failed to delete prompt', 'error');
-  }
+    showToast('Deleted', 'success');
+  } catch { showToast('Failed to delete', 'error'); }
 }
 
-// ─────────────────────────────────────────────
-// Add / Edit Modal
-// ─────────────────────────────────────────────
+// ─── Add / Edit Modal ─────────────────────────────────────────────────────────
 
 function openAddModal() {
-  editingPromptId = null;
+  editingId = null;
   dom.modalTitle.textContent = 'New Prompt';
-  dom.promptTitleInput.value = '';
-  dom.promptBodyInput.value = '';
+  dom.promptTitle.value = '';
+  dom.promptBody.value = '';
   dom.promptCategory.value = 'general';
   dom.promptTags.value = '';
   updateCharCount();
   dom.modal.classList.remove('hidden');
-  dom.promptTitleInput.focus();
+  dom.promptTitle.focus();
 }
 
 function openEditModal(prompt) {
-  editingPromptId = prompt.id;
+  editingId = prompt.id;
   dom.modalTitle.textContent = 'Edit Prompt';
-  dom.promptTitleInput.value = prompt.title || '';
-  dom.promptBodyInput.value = prompt.body || '';
+  dom.promptTitle.value = prompt.title || '';
+  dom.promptBody.value = prompt.body || '';
   dom.promptCategory.value = prompt.category || 'general';
   dom.promptTags.value = (prompt.tags || []).join(', ');
   updateCharCount();
   dom.modal.classList.remove('hidden');
-  dom.promptTitleInput.focus();
+  dom.promptTitle.focus();
 }
 
-function closeModal() {
-  dom.modal.classList.add('hidden');
-  editingPromptId = null;
-}
+function closeModal() { dom.modal.classList.add('hidden'); editingId = null; }
 
 function updateCharCount() {
-  const len = dom.promptBodyInput.value.length;
+  const len = dom.promptBody.value.length;
   dom.charCount.textContent = `${len} character${len !== 1 ? 's' : ''}`;
 }
 
 async function saveModal() {
-  const title = dom.promptTitleInput.value.trim();
-  const body = dom.promptBodyInput.value.trim();
+  const title = dom.promptTitle.value.trim();
+  const body  = dom.promptBody.value.trim();
   const category = dom.promptCategory.value;
-  const tagsRaw = dom.promptTags.value;
-  const tags = tagsRaw
-    .split(',')
-    .map((t) => t.trim().toLowerCase())
-    .filter(Boolean);
+  const tags  = dom.promptTags.value.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
 
-  if (!title) {
-    showToast('Title is required', 'error');
-    dom.promptTitleInput.focus();
-    return;
-  }
-  if (!body) {
-    showToast('Prompt body is required', 'error');
-    dom.promptBodyInput.focus();
-    return;
-  }
-
-  // Extract variable names from body
-  const variables = extractVariables(body);
+  if (!title) { showToast('Title required', 'error'); dom.promptTitle.focus(); return; }
+  if (!body)  { showToast('Prompt body required', 'error'); dom.promptBody.focus(); return; }
 
   try {
-    if (editingPromptId) {
-      await sendMsg('UPDATE_PROMPT', {
-        id: editingPromptId,
-        changes: { title, body, category, tags, variables },
-      });
+    if (editingId) {
+      await sendMsg('UPDATE_PROMPT', { id: editingId, changes: { title, body, category, tags, variables: extractVariables(body) } });
       showToast('Prompt updated', 'success');
     } else {
-      await sendMsg('SAVE_PROMPT', { title, body, category, tags, variables });
+      await sendMsg('SAVE_PROMPT', { title, body, category, tags, variables: extractVariables(body) });
       showToast('Prompt saved', 'success');
     }
     closeModal();
     await loadPrompts();
-  } catch (err) {
-    showToast('Failed to save prompt', 'error');
-    console.error('[PV] saveModal:', err);
-  }
+  } catch { showToast('Failed to save', 'error'); }
 }
 
-// ─────────────────────────────────────────────
-// Variable Modal
-// ─────────────────────────────────────────────
+// ─── Variable Modal ───────────────────────────────────────────────────────────
 
 function openVarModal(prompt, variables) {
-  pendingPasteText = prompt.body;
+  pendingPaste = prompt.body;
   dom.varFields.innerHTML = '';
-
-  for (const varName of variables) {
-    const group = document.createElement('div');
-    group.className = 'var-field-group';
-    group.innerHTML = `
-      <label for="var-input-${escapeHtml(varName)}">${escapeHtml(varName)}</label>
-      <input
-        type="text"
-        id="var-input-${escapeHtml(varName)}"
-        data-var="${escapeHtml(varName)}"
-        placeholder="Enter ${escapeHtml(varName)}..."
-        autocomplete="off"
-      >
-    `;
-    dom.varFields.appendChild(group);
+  for (const v of variables) {
+    const g = document.createElement('div');
+    g.className = 'var-field-group';
+    g.innerHTML = `
+      <label for="vi-${escHtml(v)}">${escHtml(v)}</label>
+      <input type="text" id="vi-${escHtml(v)}" data-var="${escHtml(v)}" placeholder="${escHtml(v)}…" autocomplete="off">`;
+    dom.varFields.appendChild(g);
   }
-
-  dom.varModal.classList.remove('hidden');
-  const firstInput = dom.varFields.querySelector('input');
-  if (firstInput) firstInput.focus();
-
-  // Store prompt reference for logging after insert
   dom.varInsert.dataset.promptId = prompt.id;
+  dom.varModal.classList.remove('hidden');
+  dom.varFields.querySelector('input')?.focus();
 }
 
 function closeVarModal() {
   dom.varModal.classList.add('hidden');
-  pendingPasteText = '';
+  pendingPaste = '';
   dom.varFields.innerHTML = '';
 }
 
 async function insertWithVariables() {
-  const inputs = dom.varFields.querySelectorAll('input[data-var]');
-  let text = pendingPasteText;
-
-  for (const input of inputs) {
-    const varName = input.dataset.var;
-    const value = input.value; // Allow empty values
-    const regex = new RegExp(`\\{\\{\\s*${escapeRegex(varName)}\\s*\\}\\}`, 'g');
-    text = text.replace(regex, value);
+  let text = pendingPaste;
+  for (const input of dom.varFields.querySelectorAll('input[data-var]')) {
+    text = text.replace(new RegExp(`\\{\\{\\s*${escReg(input.dataset.var)}\\s*\\}\\}`, 'g'), input.value);
   }
-
-  const promptId = dom.varInsert.dataset.promptId || null;
-  const mockPrompt = { id: promptId, body: text };
-
   closeVarModal();
-  await pasteToActiveTab(mockPrompt, text);
+  await pasteToTab({ id: dom.varInsert.dataset.promptId || null, body: text }, text);
 }
 
-// ─────────────────────────────────────────────
-// History Tab
-// ─────────────────────────────────────────────
+// ─── Refine Tab ───────────────────────────────────────────────────────────────
+
+async function grabFromPage() {
+  const tabs = await new Promise((r) => chrome.tabs.query({ active: true, currentWindow: true }, (t) => r(t || [])));
+  const tab = tabs?.[0];
+  if (!tab?.id || !isAiTab(tab.url)) { showToast('Navigate to an AI page first', 'info'); return; }
+  try {
+    const res = await new Promise((res, rej) =>
+      chrome.tabs.sendMessage(tab.id, { type: 'GET_INPUT_TEXT' }, (r) =>
+        chrome.runtime.lastError ? rej(new Error(chrome.runtime.lastError.message)) : res(r)
+      )
+    );
+    const text = res?.text?.trim();
+    if (text) { dom.refineInput.value = text; showToast('Grabbed from page!', 'success'); }
+    else showToast('No text found in the AI input', 'info');
+  } catch { showToast('Could not grab — reload the AI page', 'error'); }
+}
+
+async function handleRefine() {
+  const text = dom.refineInput.value.trim();
+  if (!text) { showToast('Enter a prompt to refine', 'error'); dom.refineInput.focus(); return; }
+
+  setRefineLoading(true);
+  dom.refineResult.classList.remove('visible');
+
+  try {
+    const payload = { text, style: refineStyle === 'custom' ? 'professional' : refineStyle };
+    if (refineStyle === 'custom' && dom.customInstr.value.trim()) {
+      payload.custom_instruction = dom.customInstr.value.trim();
+    }
+    const res = await sendMsg('REFINE_PROMPT', payload);
+
+    if (res?.error) { showToast(res.error, 'error'); return; }
+
+    // Scores
+    const before = res.score_before ?? null;
+    const after  = res.score_after  ?? null;
+    dom.scoreBefore.textContent = before !== null ? String(before) : '—';
+    dom.scoreAfter.textContent  = after  !== null ? String(after)  : '—';
+    if (before !== null && after !== null) {
+      const d = after - before;
+      dom.scoreDelta.textContent = (d >= 0 ? '+' : '') + d + ' pts';
+      dom.scoreDelta.className = `score-delta ${d > 0 ? 'positive' : d < 0 ? 'negative' : 'neutral'}`;
+    } else { dom.scoreDelta.textContent = ''; }
+
+    // Explanation
+    dom.refineExp.textContent = res.explanation || '';
+    dom.refineExp.style.display = res.explanation ? '' : 'none';
+
+    // Diff
+    renderDiff(text, res.refined || '');
+
+    // Full output
+    dom.refineOutput.textContent = res.refined || '';
+    dom.refineResult.classList.add('visible');
+  } catch { showToast('Refinement failed. Check connection.', 'error'); }
+  finally { setRefineLoading(false); }
+}
+
+function setRefineLoading(on) {
+  dom.btnRefine.disabled = on;
+  dom.btnRefine.querySelector('.btn-label').textContent = on ? 'Refining…' : 'Refine with AI';
+  dom.btnRefine.querySelector('.spinner').classList.toggle('hidden', !on);
+  dom.btnRefine.querySelector('.btn-icon').classList.toggle('hidden', on);
+}
+
+// Word-level diff using LCS
+function computeWordDiff(a, b) {
+  const tokA = a.match(/\S+|\s+/g) || [];
+  const tokB = b.match(/\S+|\s+/g) || [];
+  const m = tokA.length, n = tokB.length;
+  const dp = Array.from({ length: m + 1 }, () => new Uint16Array(n + 1));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = tokA[i-1] === tokB[j-1] ? dp[i-1][j-1] + 1 : Math.max(dp[i-1][j], dp[i][j-1]);
+
+  const ops = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && tokA[i-1] === tokB[j-1]) {
+      ops.unshift({ t: tokA[i-1], op: '=' }); i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j])) {
+      ops.unshift({ t: tokB[j-1], op: '+' }); j--;
+    } else {
+      ops.unshift({ t: tokA[i-1], op: '-' }); i--;
+    }
+  }
+  return ops;
+}
+
+function renderDiff(before, after) {
+  const ops = computeWordDiff(before, after);
+  let leftHtml = '', rightHtml = '';
+  for (const { t, op } of ops) {
+    const safe = escHtml(t);
+    if (op === '=') { leftHtml += safe; rightHtml += safe; }
+    else if (op === '-') leftHtml += `<span class="diff-del">${safe}</span>`;
+    else rightHtml += `<span class="diff-add">${safe}</span>`;
+  }
+  dom.diffBefore.innerHTML = leftHtml;
+  dom.diffAfter.innerHTML  = rightHtml;
+}
+
+async function refineInsert() {
+  const text = dom.refineOutput.textContent;
+  if (!text) return;
+  await pasteToTab({ id: null, body: text }, text);
+}
+
+async function refineSave() {
+  const text = dom.refineOutput.textContent;
+  if (!text) return;
+  try {
+    await sendMsg('SAVE_PROMPT', {
+      title: `Refined: ${dom.refineInput.value.trim().slice(0, 55)}`,
+      body: text,
+      category: 'general',
+      tags: ['refined', refineStyle],
+    });
+    showToast('Saved to Library!', 'success');
+  } catch { showToast('Failed to save', 'error'); }
+}
+
+// ─── History ──────────────────────────────────────────────────────────────────
 
 async function loadHistory() {
   try {
     const res = await sendMsg('GET_HISTORY', { limit: 50, offset: 0 });
-    const history = res?.history || [];
-    renderHistory(history);
-  } catch (err) {
-    showToast('Failed to load history', 'error');
-  }
+    renderHistory(res?.history || []);
+  } catch { showToast('Failed to load history', 'error'); }
 }
 
 function renderHistory(history) {
   dom.historyList.innerHTML = '';
-
-  if (history.length === 0) {
-    dom.historyEmpty.classList.remove('hidden');
-    return;
-  }
-
+  if (!history.length) { dom.historyEmpty.classList.remove('hidden'); return; }
   dom.historyEmpty.classList.add('hidden');
-
-  for (const entry of history) {
-    const card = createHistoryCard(entry);
-    dom.historyList.appendChild(card);
-  }
+  for (const e of history) dom.historyList.appendChild(createHistoryCard(e));
 }
 
 function createHistoryCard(entry) {
   const card = document.createElement('div');
   card.className = 'history-card';
-
-  const timeStr = formatRelativeTime(entry.used_at);
-  const bodyPreview = (entry.body_snapshot || '').slice(0, 100) + ((entry.body_snapshot || '').length > 100 ? '…' : '');
-
+  const preview = (entry.body_snapshot || '').slice(0, 100) + ((entry.body_snapshot || '').length > 100 ? '…' : '');
   card.innerHTML = `
     <div class="history-card-meta">
-      <span class="history-platform">${escapeHtml(entry.platform || 'unknown')}</span>
-      <span class="history-time">${timeStr}</span>
+      <span class="history-platform">${escHtml(entry.platform || 'unknown')}</span>
+      ${entry.was_refined ? '<span class="refined-badge">✦ Refined</span>' : ''}
+      <span class="history-time">${relativeTime(entry.used_at)}</span>
     </div>
-    <div class="history-body">${escapeHtml(bodyPreview)}</div>
-    <button class="history-reuse-btn" title="Re-use this prompt">↑ Re-use</button>
-  `;
-
+    <div class="history-body">${escHtml(preview)}</div>
+    <button class="history-reuse-btn">Re-use</button>`;
   card.querySelector('.history-reuse-btn').addEventListener('click', async () => {
     const text = entry.body_snapshot || '';
-    if (!text) return;
-    const variables = extractVariables(text);
-    const mockPrompt = { id: entry.prompt_id, body: text };
-    if (variables.length > 0) {
-      openVarModal(mockPrompt, variables);
-    } else {
-      await pasteToActiveTab(mockPrompt, text);
-    }
+    const vars = extractVariables(text);
+    const mock = { id: entry.prompt_id, body: text };
+    vars.length ? openVarModal(mock, vars) : await pasteToTab(mock, text);
   });
-
   return card;
 }
 
-function formatRelativeTime(isoString) {
-  if (!isoString) return '';
-  const date = new Date(isoString);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffSec = Math.floor(diffMs / 1000);
-
-  if (diffSec < 60) return 'just now';
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDays = Math.floor(diffHr / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
+function relativeTime(iso) {
+  if (!iso) return '';
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60)   return 'just now';
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+  if (s < 604800) return `${Math.floor(s/86400)}d ago`;
+  return new Date(iso).toLocaleDateString();
 }
 
-// ─────────────────────────────────────────────
-// Settings Tab
-// ─────────────────────────────────────────────
+// ─── Settings ─────────────────────────────────────────────────────────────────
 
 async function loadSettings() {
   try {
     const res = await sendMsg('GET_SETTINGS');
     const s = res?.settings || {};
-    dom.backendUrlInput.value = s.backendUrl || 'http://localhost:8000';
-    dom.authTokenInput.value = s.authToken || '';
+    dom.backendUrlInput.value   = s.backendUrl || 'http://localhost:8000';
     dom.autoSubmitToggle.checked = Boolean(s.autoSubmit);
-    dom.darkModeToggle.checked = s.darkMode !== false;
-  } catch (err) {
-    console.warn('[PV] loadSettings error:', err);
-  }
+    dom.darkModeToggle.checked   = Boolean(s.darkMode);
+    await checkAuthStatus(s);
+  } catch { /* ignore */ }
 }
 
-async function saveSettings() {
+async function checkAuthStatus(settings) {
+  const token = settings?.authToken;
+  if (!token) { showSignedOut(); return; }
   try {
-    const backendUrl = dom.backendUrlInput.value.trim() || 'http://localhost:8000';
-    const authToken = dom.authTokenInput.value.trim();
-    const autoSubmit = dom.autoSubmitToggle.checked;
-    const darkMode = dom.darkModeToggle.checked;
-
-    await Promise.all([
-      sendMsg('SET_SETTING', { key: 'BACKEND_URL', value: backendUrl }),
-      sendMsg('SET_SETTING', { key: 'auth_token', value: authToken }),
-      sendMsg('SET_SETTING', { key: 'auto_submit', value: autoSubmit }),
-      sendMsg('SET_SETTING', { key: 'dark_mode', value: darkMode }),
-    ]);
-
-    applyTheme(darkMode);
-    setSettingsStatus('Settings saved!', 'success');
-    showToast('Settings saved', 'success');
-  } catch (err) {
-    setSettingsStatus('Failed to save settings', 'error');
-    showToast('Failed to save settings', 'error');
-  }
+    const backendUrl = settings?.backendUrl || 'http://localhost:8000';
+    const resp = await fetch(`${backendUrl.replace(/\/$/, '')}/v1/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (resp.ok) {
+      const user = await resp.json();
+      showSignedIn(user.email || user.full_name || 'User');
+    } else {
+      showSignedOut();
+    }
+  } catch { showSignedOut(); }
 }
 
-function setSettingsStatus(msg, type) {
-  dom.settingsStatus.textContent = msg;
-  dom.settingsStatus.className = type;
-  setTimeout(() => {
-    dom.settingsStatus.textContent = '';
-    dom.settingsStatus.className = '';
-  }, 3000);
+function showSignedIn(email) {
+  dom.userCard.classList.remove('hidden');
+  dom.signInCta.classList.add('hidden');
+  dom.userEmail.textContent = email;
+  const initials = email.split('@')[0].slice(0, 2).toUpperCase();
+  dom.userAvatar.textContent = initials;
 }
 
-// ─────────────────────────────────────────────
-// Search (debounced)
-// ─────────────────────────────────────────────
-
-let searchDebounceTimer = null;
-
-function onSearchInput() {
-  clearTimeout(searchDebounceTimer);
-  searchDebounceTimer = setTimeout(() => {
-    applyFiltersAndRender();
-  }, 50);
+function showSignedOut() {
+  dom.userCard.classList.add('hidden');
+  dom.signInCta.classList.remove('hidden');
 }
 
-// ─────────────────────────────────────────────
-// Tab Switching
-// ─────────────────────────────────────────────
+async function handleSignOut() {
+  await sendMsg('SET_SETTING', { key: 'auth_token', value: '' }).catch(() => {});
+  showSignedOut();
+  showToast('Signed out', 'info');
+}
 
-function switchTab(tabName) {
-  dom.tabs.forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.tab === tabName);
+function handleSignIn() {
+  chrome.tabs.create({ url: 'http://localhost:5173' });
+}
+
+async function autoSaveSetting(key, value) {
+  await sendMsg('SET_SETTING', { key, value }).catch(() => {});
+}
+
+// ─── Tab Switching ────────────────────────────────────────────────────────────
+
+const SEARCH_TABS = new Set(['library', 'history']);
+
+function switchTab(name) {
+  currentTab = name;
+  dom.tabs.forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
+  dom.tabContents.forEach((c) => {
+    const active = c.id === `tab-${name}`;
+    c.classList.toggle('active', active);
+    c.classList.toggle('hidden', !active);
   });
-  dom.tabContents.forEach((content) => {
-    const isActive = content.id === `tab-${tabName}`;
-    content.classList.toggle('active', isActive);
-    content.classList.toggle('hidden', !isActive);
-  });
-
-  if (tabName === 'history') loadHistory();
-  if (tabName === 'settings') loadSettings();
+  dom.searchRow.classList.toggle('hidden-row', !SEARCH_TABS.has(name));
+  if (name === 'history') loadHistory();
+  if (name === 'settings') loadSettings();
 }
 
-// ─────────────────────────────────────────────
-// Toast
-// ─────────────────────────────────────────────
+// ─── Keyboard Shortcuts ───────────────────────────────────────────────────────
 
-function showToast(message, type = 'success') {
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    const tag = document.activeElement?.tagName;
+    const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+    // Ctrl+1–4 → switch tab
+    if (e.ctrlKey && !e.shiftKey && !e.altKey && ['1','2','3','4'].includes(e.key)) {
+      e.preventDefault();
+      const tabs = ['library','refine','history','settings'];
+      switchTab(tabs[Number(e.key) - 1]);
+      return;
+    }
+
+    // Ctrl+Enter → refine
+    if (e.ctrlKey && e.key === 'Enter' && currentTab === 'refine') {
+      e.preventDefault();
+      if (!dom.btnRefine.disabled) handleRefine();
+      return;
+    }
+
+    // Escape → close modals
+    if (e.key === 'Escape') {
+      if (!dom.modal.classList.contains('hidden'))    { closeModal(); return; }
+      if (!dom.varModal.classList.contains('hidden')) { closeVarModal(); return; }
+    }
+
+    if (inInput) return;
+
+    // / → focus search
+    if (e.key === '/' && SEARCH_TABS.has(currentTab)) {
+      e.preventDefault();
+      dom.searchInput.focus();
+      dom.searchInput.select();
+      return;
+    }
+
+    // N → new prompt
+    if ((e.key === 'n' || e.key === 'N') && currentTab === 'library') {
+      e.preventDefault();
+      openAddModal();
+    }
+  });
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+
+function showToast(msg, type = 'success') {
   clearTimeout(toastTimer);
-  dom.toast.textContent = message;
+  dom.toast.textContent = msg;
   dom.toast.className = `toast toast-${type}`;
   dom.toast.classList.remove('hidden', 'toast-fade-out');
-
   toastTimer = setTimeout(() => {
     dom.toast.classList.add('toast-fade-out');
     setTimeout(() => {
@@ -724,125 +784,138 @@ function showToast(message, type = 'success') {
   }, 2500);
 }
 
-// ─────────────────────────────────────────────
-// Background Message Listener
-// ─────────────────────────────────────────────
+// ─── Background Messages ──────────────────────────────────────────────────────
 
 function listenForBackgroundMessages() {
-  chrome.runtime.onMessage.addListener((message) => {
-    if (message.type === 'SYNC_STATUS') {
-      switch (message.status) {
-        case 'success':
-          showToast('Synced successfully', 'success');
-          break;
-        case 'offline':
-          showToast('Offline – sync paused', 'info');
-          break;
-        case 'auth_error':
-          showToast('Auth error – check token', 'error');
-          break;
-      }
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'SYNC_STATUS') {
+      if (msg.status === 'success')    showToast('Synced', 'success');
+      if (msg.status === 'offline')    showToast('Offline – sync paused', 'info');
+      if (msg.status === 'auth_error') showToast('Session expired – please re-login', 'error');
     }
   });
 }
 
-// ─────────────────────────────────────────────
-// Event Bindings
-// ─────────────────────────────────────────────
+// ─── Event Bindings ───────────────────────────────────────────────────────────
+
+let searchTimer = null;
 
 function bindEvents() {
-  // Theme
+  // Header
   dom.themeToggle.addEventListener('click', toggleTheme);
 
   // Search
-  dom.searchInput.addEventListener('input', onSearchInput);
-
-  // Add button
-  dom.addBtn.addEventListener('click', openAddModal);
-  dom.emptyAddBtn?.addEventListener('click', openAddModal);
-
-  // Tabs
-  dom.tabs.forEach((btn) => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  dom.searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(applyFiltersAndRender, 50);
   });
 
-  // Category / sort filters
+  // Add
+  dom.addBtn.addEventListener('click', openAddModal);
+  dom.emptyAddBtn.addEventListener('click', openAddModal);
+
+  // Tabs
+  dom.tabs.forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+  // Filters
   dom.categoryFilter.addEventListener('change', applyFiltersAndRender);
   dom.sortSelect.addEventListener('change', applyFiltersAndRender);
-
-  // Favorites filter toggle
   dom.favFilter.addEventListener('click', () => {
     favoritesOnly = !favoritesOnly;
     dom.favFilter.classList.toggle('active', favoritesOnly);
     applyFiltersAndRender();
   });
 
+  // Refine
+  dom.styleChips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      dom.styleChips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      refineStyle = chip.dataset.style;
+      dom.customWrap.classList.toggle('visible', refineStyle === 'custom');
+    });
+  });
+  dom.refineGrabBtn.addEventListener('click', grabFromPage);
+  dom.btnRefine.addEventListener('click', handleRefine);
+  dom.refineCopyBtn.addEventListener('click', () => {
+    const text = dom.refineOutput.textContent;
+    if (text) navigator.clipboard.writeText(text).then(() => showToast('Copied!', 'success'));
+  });
+  dom.refineInsertBtn.addEventListener('click', refineInsert);
+  dom.refineSaveBtn.addEventListener('click', refineSave);
+
+  // Settings auto-save
+  dom.darkModeToggle.addEventListener('change', async () => {
+    applyTheme(dom.darkModeToggle.checked);
+    await autoSaveSetting('dark_mode', dom.darkModeToggle.checked);
+  });
+  dom.autoSubmitToggle.addEventListener('change', async () => {
+    await autoSaveSetting('auto_submit', dom.autoSubmitToggle.checked);
+  });
+
+  // Settings actions
+  dom.signInBtn.addEventListener('click', handleSignIn);
+  dom.signOutBtn.addEventListener('click', handleSignOut);
+
+  dom.advancedToggle.addEventListener('click', () => {
+    const open = dom.advancedBody.classList.toggle('visible');
+    dom.advancedToggle.classList.toggle('open', open);
+  });
+
+  dom.saveBackendBtn.addEventListener('click', async () => {
+    const url = dom.backendUrlInput.value.trim() || 'http://localhost:8000';
+    await autoSaveSetting('BACKEND_URL', url);
+    showToast('Backend URL saved', 'success');
+  });
+
+  dom.syncNowBtn.addEventListener('click', async () => {
+    dom.syncNowBtn.disabled = true;
+    dom.syncNowBtn.textContent = 'Syncing…';
+    try { await sendMsg('TRIGGER_SYNC'); showToast('Sync triggered', 'info'); }
+    catch { showToast('Sync failed', 'error'); }
+    finally { dom.syncNowBtn.disabled = false; dom.syncNowBtn.textContent = 'Sync now'; }
+  });
+
   // Modal
   dom.modalClose.addEventListener('click', closeModal);
   dom.modalCancel.addEventListener('click', closeModal);
   dom.modalSave.addEventListener('click', saveModal);
-  dom.promptBodyInput.addEventListener('input', updateCharCount);
-
-  // Close modal on overlay click
-  dom.modal.addEventListener('click', (e) => {
-    if (e.target === dom.modal) closeModal();
+  dom.promptBody.addEventListener('input', updateCharCount);
+  dom.modal.addEventListener('click', (e) => { if (e.target === dom.modal) closeModal(); });
+  dom.modal.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Enter' && e.ctrlKey) saveModal();
   });
 
   // Var modal
   dom.varModalClose.addEventListener('click', closeVarModal);
   dom.varCancel.addEventListener('click', closeVarModal);
   dom.varInsert.addEventListener('click', insertWithVariables);
-
-  dom.varModal.addEventListener('click', (e) => {
-    if (e.target === dom.varModal) closeVarModal();
-  });
-
-  // Keyboard shortcuts in var modal
+  dom.varModal.addEventListener('click', (e) => { if (e.target === dom.varModal) closeVarModal(); });
   dom.varModal.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      insertWithVariables();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); insertWithVariables(); }
     if (e.key === 'Escape') closeVarModal();
   });
 
-  // Modal keyboard
-  dom.modal.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeModal();
-    if (e.key === 'Enter' && e.ctrlKey) saveModal();
-  });
-
-  // Settings
-  dom.saveSettingsBtn.addEventListener('click', saveSettings);
-  dom.syncNowBtn.addEventListener('click', async () => {
-    dom.syncNowBtn.disabled = true;
-    dom.syncNowBtn.textContent = 'Syncing…';
-    try {
-      await sendMsg('TRIGGER_SYNC');
-      showToast('Sync triggered', 'info');
-    } catch (err) {
-      showToast('Sync failed', 'error');
-    } finally {
-      dom.syncNowBtn.disabled = false;
-      dom.syncNowBtn.textContent = 'Sync Now';
-    }
-  });
+  // Global shortcuts
+  bindKeyboardShortcuts();
 }
 
-// ─────────────────────────────────────────────
-// Utilities
-// ─────────────────────────────────────────────
+// ─── Utilities ────────────────────────────────────────────────────────────────
 
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+function extractVariables(text) {
+  const found = new Set();
+  let m;
+  const re = /\{\{([^}]+)\}\}/g;
+  while ((m = re.exec(text)) !== null) found.add(m[1].trim());
+  return [...found];
 }
 
-function escapeRegex(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function escReg(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

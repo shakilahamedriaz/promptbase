@@ -56,23 +56,23 @@ const STYLES: { value: RefineStyle; label: string; description: string; color: s
 ];
 
 const styleColorClasses: Record<string, string> = {
-  blue: 'border-blue-500 bg-blue-500/10 text-blue-400',
-  purple: 'border-purple-500 bg-purple-500/10 text-purple-400',
-  green: 'border-green-500 bg-green-500/10 text-green-400',
-  orange: 'border-orange-500 bg-orange-500/10 text-orange-400',
+  blue: 'border-blue-300 bg-blue-50 text-blue-700',
+  purple: 'border-purple-300 bg-purple-50 text-purple-700',
+  green: 'border-green-300 bg-green-50 text-green-700',
+  orange: 'border-orange-300 bg-orange-50 text-orange-700',
 };
 
 // ─── Quality Score Ring ───────────────────────────────────────────────────────
 
 function ScoreRing({ score, label }: { score: number; label: string }) {
-  const color = score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444';
+  const color = score >= 70 ? '#16a34a' : score >= 40 ? '#d97706' : '#ef4444';
   const circumference = 2 * Math.PI * 18;
   const dash = (score / 100) * circumference;
 
   return (
     <div className="flex flex-col items-center gap-1">
       <svg width="48" height="48" viewBox="0 0 48 48" aria-label={`${label}: ${score}`}>
-        <circle cx="24" cy="24" r="18" fill="none" stroke="#374151" strokeWidth="4" />
+        <circle cx="24" cy="24" r="18" fill="none" stroke="#e5e7eb" strokeWidth="4" />
         <circle
           cx="24"
           cy="24"
@@ -96,7 +96,7 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
           {score}
         </text>
       </svg>
-      <span className="text-xs text-gray-500">{label}</span>
+      <span className="text-xs text-gray-400">{label}</span>
     </div>
   );
 }
@@ -179,46 +179,46 @@ export function RefinerPage() {
   return (
     <div className="flex h-full flex-col">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-800 bg-gray-900 px-6 py-4">
+      <div className="border-b bg-white px-6 py-5" style={{ borderColor: 'var(--color-border)' }}>
         <div className="flex items-center gap-3">
-          <SparklesIcon className="h-6 w-6 text-brand-400" />
+          <SparklesIcon className="h-6 w-6 text-brand-500" />
           <div>
-            <h1 className="text-xl font-bold text-white">AI Refiner</h1>
+            <h1 className="text-[17px] font-bold tracking-tight text-gray-900">AI Refiner</h1>
             <p className="text-sm text-gray-400">Enhance your prompts with AI-powered refinement</p>
           </div>
         </div>
       </div>
 
       {/* ── Body ────────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--color-bg)' }}>
         <div className="mx-auto max-w-5xl space-y-6">
           {/* Input Section */}
-          <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-            <h2 className="mb-4 text-sm font-semibold text-gray-300">Your Prompt</h2>
+          <div className="rounded-[14px] border bg-white p-6 shadow-card" style={{ borderColor: 'var(--color-border)' }}>
+            <h2 className="mb-4 text-sm font-semibold text-gray-700">Your Prompt</h2>
             <textarea
               value={inputPrompt}
               onChange={(e) => setInputPrompt(e.target.value)}
               placeholder="Paste or type your prompt here…"
               rows={6}
-              className="block w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white placeholder-gray-500 font-mono focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-y"
+              className="block w-full rounded-xl border bg-white px-4 py-3 text-[13px] text-gray-800 placeholder-gray-400 font-mono focus:border-brand-400 focus:outline-none resize-y transition-colors" style={{ borderColor: 'var(--color-border)' }}
             />
             <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-gray-600">{inputPrompt.length.toLocaleString()} characters</span>
+              <span className="text-xs text-gray-400">{inputPrompt.length.toLocaleString()} characters</span>
             </div>
 
             {/* Style selector */}
             <div className="mt-4">
-              <p className="mb-3 text-sm font-medium text-gray-300">Refinement Style</p>
+              <p className="mb-3 text-sm font-medium text-gray-700">Refinement Style</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {STYLES.map((s) => (
                   <button
                     key={s.value}
                     onClick={() => setStyle(s.value)}
                     className={clsx(
-                      'rounded-lg border p-3 text-left transition-colors',
+                      'rounded-xl border p-3 text-left transition-colors',
                       style === s.value
                         ? styleColorClasses[s.color]
-                        : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600 hover:text-white',
+                        : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700',
                     )}
                   >
                     <p className="text-sm font-semibold">{s.label}</p>
@@ -249,7 +249,7 @@ export function RefinerPage() {
 
           {/* Results Section */}
           {isRefining && (
-            <div className="rounded-xl border border-gray-800 bg-gray-900 p-8 flex flex-col items-center gap-4">
+            <div className="rounded-[14px] border bg-white p-8 flex flex-col items-center gap-4 shadow-card" style={{ borderColor: 'var(--color-border)' }}>
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-600 border-t-transparent" />
               <p className="text-sm text-gray-400">AI is refining your prompt…</p>
             </div>
@@ -258,12 +258,12 @@ export function RefinerPage() {
           {result && !isRefining && (
             <>
               {/* Quality scores */}
-              <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-                <h2 className="mb-4 text-sm font-semibold text-gray-300">Quality Scores</h2>
+              <div className="rounded-[14px] border bg-white p-6 shadow-card" style={{ borderColor: 'var(--color-border)' }}>
+                <h2 className="mb-4 text-sm font-semibold text-gray-700">Quality Scores</h2>
                 <div className="flex items-center gap-8">
                   <ScoreRing score={result.score_before} label="Before" />
                   <div className="flex-1 text-center">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-green-500/10 px-3 py-1 text-xs text-green-400">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-1 text-xs text-green-600">
                       <span>▲</span>
                       <span>+{result.score_after - result.score_before} points</span>
                     </div>
@@ -272,25 +272,25 @@ export function RefinerPage() {
                 </div>
 
                 {result.explanation && (
-                  <div className="mt-4 rounded-lg bg-gray-800 px-4 py-3">
-                    <p className="text-xs font-medium text-gray-400 mb-1">AI Explanation</p>
-                    <p className="text-sm text-gray-300">{result.explanation}</p>
+                  <div className="mt-4 rounded-xl bg-gray-50 px-4 py-3">
+                    <p className="text-xs font-medium text-gray-500 mb-1">AI Explanation</p>
+                    <p className="text-sm text-gray-700">{result.explanation}</p>
                   </div>
                 )}
               </div>
 
               {/* Diff Viewer */}
-              <div className="rounded-xl border border-gray-800 bg-gray-900 overflow-hidden">
-                <div className="flex items-center justify-between border-b border-gray-800 px-6 py-3">
-                  <h2 className="text-sm font-semibold text-gray-300">Comparison</h2>
-                  <div className="flex items-center gap-2">
+              <div className="rounded-[14px] border bg-white overflow-hidden shadow-card" style={{ borderColor: 'var(--color-border)' }}>
+                <div className="flex items-center justify-between border-b px-6 py-3" style={{ borderColor: 'var(--color-border)' }}>
+                  <h2 className="text-sm font-semibold text-gray-700">Comparison</h2>
+                  <div className="flex items-center gap-1">
                     <button
                       onClick={() => setViewMode('diff')}
                       className={clsx(
-                        'rounded px-3 py-1 text-xs font-medium transition-colors',
+                        'rounded-lg px-3 py-1 text-xs font-medium transition-colors',
                         viewMode === 'diff'
                           ? 'bg-brand-600 text-white'
-                          : 'text-gray-400 hover:text-white',
+                          : 'text-gray-500 hover:text-gray-700',
                       )}
                     >
                       Unified
@@ -298,10 +298,10 @@ export function RefinerPage() {
                     <button
                       onClick={() => setViewMode('side-by-side')}
                       className={clsx(
-                        'rounded px-3 py-1 text-xs font-medium transition-colors',
+                        'rounded-lg px-3 py-1 text-xs font-medium transition-colors',
                         viewMode === 'side-by-side'
                           ? 'bg-brand-600 text-white'
-                          : 'text-gray-400 hover:text-white',
+                          : 'text-gray-500 hover:text-gray-700',
                       )}
                     >
                       Side by Side
@@ -314,26 +314,26 @@ export function RefinerPage() {
                     newValue={result.refined_body}
                     splitView={viewMode === 'side-by-side'}
                     compareMethod={DiffMethod.WORDS}
-                    useDarkTheme
+                    useDarkTheme={false}
                     leftTitle="Original"
                     rightTitle="Refined"
                     styles={{
                       variables: {
-                        dark: {
-                          diffViewerBackground: '#111827',
-                          addedBackground: '#14532d33',
-                          addedColor: '#86efac',
-                          removedBackground: '#7f1d1d33',
-                          removedColor: '#fca5a5',
-                          wordAddedBackground: '#14532d66',
-                          wordRemovedBackground: '#7f1d1d66',
-                          addedGutterBackground: '#14532d22',
-                          removedGutterBackground: '#7f1d1d22',
-                          gutterBackground: '#111827',
-                          gutterColor: '#6b7280',
-                          emptyLineBackground: '#111827',
-                          highlightBackground: '#1f2937',
-                          highlightGutterBackground: '#1f2937',
+                        light: {
+                          diffViewerBackground: '#ffffff',
+                          addedBackground: '#f0fdf4',
+                          addedColor: '#166534',
+                          removedBackground: '#fef2f2',
+                          removedColor: '#991b1b',
+                          wordAddedBackground: '#bbf7d0',
+                          wordRemovedBackground: '#fecaca',
+                          addedGutterBackground: '#dcfce7',
+                          removedGutterBackground: '#fee2e2',
+                          gutterBackground: '#f9fafb',
+                          gutterColor: '#9ca3af',
+                          emptyLineBackground: '#f9fafb',
+                          highlightBackground: '#f3f4f6',
+                          highlightGutterBackground: '#e5e7eb',
                         },
                       },
                     }}
@@ -342,16 +342,16 @@ export function RefinerPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 px-6 py-4">
+              <div className="flex items-center justify-between rounded-[14px] border bg-white px-6 py-4 shadow-card" style={{ borderColor: 'var(--color-border)' }}>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-400">Was this helpful?</span>
+                  <span className="text-sm text-gray-500">Was this helpful?</span>
                   <button
                     onClick={() => handleFeedback('up')}
                     className={clsx(
                       'rounded-lg p-2 transition-colors',
                       feedback === 'up'
-                        ? 'bg-green-500/10 text-green-400'
-                        : 'text-gray-500 hover:bg-gray-800 hover:text-green-400',
+                        ? 'bg-green-50 text-green-600'
+                        : 'text-gray-400 hover:bg-gray-100 hover:text-green-600',
                     )}
                     aria-label="Thumbs up"
                   >
@@ -366,8 +366,8 @@ export function RefinerPage() {
                     className={clsx(
                       'rounded-lg p-2 transition-colors',
                       feedback === 'down'
-                        ? 'bg-red-500/10 text-red-400'
-                        : 'text-gray-500 hover:bg-gray-800 hover:text-red-400',
+                        ? 'bg-red-50 text-red-500'
+                        : 'text-gray-400 hover:bg-gray-100 hover:text-red-500',
                     )}
                     aria-label="Thumbs down"
                   >

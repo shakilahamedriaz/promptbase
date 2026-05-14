@@ -41,21 +41,24 @@ interface PromptCardProps {
 function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onCopy }: PromptCardProps) {
   const scoreColor =
     prompt.quality_score === null
-      ? 'text-gray-500'
+      ? 'text-gray-400'
       : prompt.quality_score >= 70
-        ? 'text-green-400'
+        ? 'text-green-600'
         : prompt.quality_score >= 40
-          ? 'text-yellow-400'
-          : 'text-red-400';
+          ? 'text-yellow-600'
+          : 'text-red-500';
 
   return (
-    <article className="group relative rounded-xl border border-gray-800 bg-gray-900 p-5 hover:border-gray-700 transition-colors">
+    <article className="group relative rounded-[14px] border bg-white p-5 transition-all duration-150 shadow-card hover:shadow-card-hover" style={{ borderColor: 'var(--color-border)' }}
+      onMouseEnter={e => (e.currentTarget.style.borderColor = '#C4B5FD')}
+      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
+    >
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold text-white">{prompt.title}</h3>
+          <h3 className="truncate text-[13px] font-semibold text-gray-900 tracking-tight">{prompt.title}</h3>
           <div className="mt-1 flex items-center gap-2 flex-wrap">
-            <span className="rounded-full bg-gray-800 px-2 py-0.5 text-xs text-gray-400">
+            <span className="rounded-full bg-brand-50 border border-brand-100 px-2 py-0.5 text-[11px] font-medium text-brand-600">
               {prompt.category || 'General'}
             </span>
             {prompt.quality_score !== null && (
@@ -63,7 +66,7 @@ function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onCopy }: Prom
                 Score: {prompt.quality_score}
               </span>
             )}
-            <span className="text-xs text-gray-600">
+            <span className="text-xs text-gray-400">
               Used {prompt.use_count}×
             </span>
           </div>
@@ -72,7 +75,7 @@ function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onCopy }: Prom
         {/* Favorite star */}
         <button
           onClick={() => onToggleFavorite(prompt.id)}
-          className="shrink-0 text-gray-600 hover:text-yellow-400 transition-colors"
+          className="shrink-0 text-gray-300 hover:text-yellow-400 transition-colors"
           aria-label={prompt.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
         >
           {prompt.is_favorite ? (
@@ -94,20 +97,20 @@ function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onCopy }: Prom
           {prompt.tags.slice(0, 4).map((tag) => (
             <span
               key={tag}
-              className="rounded-full bg-brand-600/10 px-2 py-0.5 text-xs text-brand-400"
+              className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500"
             >
               #{tag}
             </span>
           ))}
           {prompt.tags.length > 4 && (
-            <span className="text-xs text-gray-600">+{prompt.tags.length - 4} more</span>
+            <span className="text-xs text-gray-400">+{prompt.tags.length - 4} more</span>
           )}
         </div>
       )}
 
       {/* Footer */}
       <div className="flex items-center justify-between">
-        <span className="text-xs text-gray-600">
+        <span className="text-xs text-gray-400">
           {formatDistanceToNow(new Date(prompt.updated_at), { addSuffix: true })}
         </span>
 
@@ -115,21 +118,21 @@ function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onCopy }: Prom
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => onCopy(prompt.body)}
-            className="rounded p-1.5 text-gray-500 hover:bg-gray-800 hover:text-gray-200 transition-colors"
+            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
             title="Copy prompt"
           >
             <DocumentDuplicateIcon className="h-4 w-4" />
           </button>
           <button
             onClick={() => onEdit(prompt)}
-            className="rounded p-1.5 text-gray-500 hover:bg-gray-800 hover:text-gray-200 transition-colors"
+            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
             title="Edit prompt"
           >
             <PencilIcon className="h-4 w-4" />
           </button>
           <button
             onClick={() => onDelete(prompt)}
-            className="rounded p-1.5 text-gray-500 hover:bg-red-900/30 hover:text-red-400 transition-colors"
+            className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
             title="Delete prompt"
           >
             <TrashIcon className="h-4 w-4" />
@@ -222,11 +225,11 @@ export function LibraryPage() {
   return (
     <div className="flex h-full flex-col">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-800 bg-gray-900 px-6 py-4">
+      <div className="border-b bg-white px-6 py-5" style={{ borderColor: 'var(--color-border)' }}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-xl font-bold text-white">Prompt Library</h1>
-            <p className="text-sm text-gray-400">{total.toLocaleString()} prompts</p>
+            <h1 className="text-[17px] font-bold tracking-tight text-gray-900">Prompt Library</h1>
+            <p className="text-[13px] text-gray-400 mt-0.5">{total.toLocaleString()} prompts</p>
           </div>
           <Button variant="primary" leftIcon={<PlusIcon className="h-4 w-4" />} onClick={handleCreate}>
             New Prompt
@@ -236,23 +239,23 @@ export function LibraryPage() {
         {/* Search + Controls */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-md">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="search"
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search prompts…"
-              className="block w-full rounded-lg border border-gray-700 bg-gray-800 pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="block w-full rounded-xl border bg-white pl-9 pr-3 py-2 text-[13px] text-gray-800 placeholder-gray-400 focus:border-brand-400 focus:outline-none transition-colors" style={{ borderColor: 'var(--color-border)' }}
             />
           </div>
 
           <button
             onClick={() => setShowFilters((v) => !v)}
             className={clsx(
-              'flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors',
+              'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors',
               showFilters
-                ? 'border-brand-500 bg-brand-600/20 text-brand-400'
-                : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600 hover:text-white',
+                ? 'border-brand-300 bg-brand-50 text-brand-600'
+                : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700',
             )}
           >
             <FunnelIcon className="h-4 w-4" />
@@ -264,13 +267,13 @@ export function LibraryPage() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as SortOption)}
-              className="appearance-none rounded-lg border border-gray-700 bg-gray-800 pl-3 pr-8 py-2 text-sm text-gray-300 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="appearance-none rounded-xl border bg-white pl-3 pr-8 py-2 text-[13px] text-gray-700 focus:border-brand-400 focus:outline-none transition-colors" style={{ borderColor: 'var(--color-border)' }}
             >
               {SORT_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
-            <ArrowsUpDownIcon className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+            <ArrowsUpDownIcon className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           </div>
         </div>
 
@@ -285,7 +288,7 @@ export function LibraryPage() {
                   'rounded-full px-3 py-1 text-xs font-medium transition-colors',
                   (category === cat || (cat === 'All' && !category))
                     ? 'bg-brand-600 text-white'
-                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white',
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700',
                 )}
               >
                 {cat}
@@ -296,9 +299,9 @@ export function LibraryPage() {
       </div>
 
       {/* ── Body ────────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--color-bg)' }}>
         {error && (
-          <div className="rounded-lg bg-red-900/30 border border-red-800 px-4 py-3 text-sm text-red-300 mb-4">
+          <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600 mb-4">
             {error}
           </div>
         )}
@@ -306,18 +309,18 @@ export function LibraryPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-44 rounded-xl bg-gray-800 animate-pulse" />
+              <div key={i} className="h-44 rounded-2xl bg-gray-100 animate-pulse" />
             ))}
           </div>
         ) : prompts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-800">
-              <DocumentDuplicateIcon className="h-8 w-8 text-gray-600" />
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
+              <DocumentDuplicateIcon className="h-8 w-8 text-gray-300" />
             </div>
-            <p className="text-lg font-medium text-gray-300">
+            <p className="text-lg font-medium text-gray-700">
               {debouncedSearch || category ? 'No prompts match your filters' : 'No prompts yet'}
             </p>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-gray-400">
               {debouncedSearch || category
                 ? 'Try adjusting your search or filters.'
                 : 'Create your first prompt to get started.'}
@@ -354,7 +357,7 @@ export function LibraryPage() {
                 >
                   Previous
                 </Button>
-                <span className="text-sm text-gray-400">
+                <span className="text-sm text-gray-500">
                   Page {page} of {totalPages}
                 </span>
                 <Button
@@ -398,9 +401,9 @@ export function LibraryPage() {
           </>
         }
       >
-        <p className="text-sm text-gray-300">
+        <p className="text-sm text-gray-600">
           Are you sure you want to delete{' '}
-          <span className="font-semibold text-white">&ldquo;{deleteTarget?.title}&rdquo;</span>?
+          <span className="font-semibold text-gray-900">&ldquo;{deleteTarget?.title}&rdquo;</span>?
           This action cannot be undone.
         </p>
       </Modal>

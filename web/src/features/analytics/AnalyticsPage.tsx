@@ -80,22 +80,22 @@ function StatCard({
   trend?: number;
 }) {
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
+    <div className="rounded-[14px] border bg-white p-5 shadow-card" style={{ borderColor: 'var(--color-border)' }}>
       <div className="flex items-start justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600/20">
-          <Icon className="h-5 w-5 text-brand-400" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 border border-brand-100">
+          <Icon className="h-5 w-5 text-brand-600" />
         </div>
         {trend !== undefined && (
           <span
-            className={`text-xs font-medium ${trend >= 0 ? 'text-green-400' : 'text-red-400'}`}
+            className={`text-xs font-medium ${trend >= 0 ? 'text-green-600' : 'text-red-500'}`}
           >
             {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}%
           </span>
         )}
       </div>
-      <p className="mt-3 text-2xl font-bold text-white">{value.toLocaleString()}</p>
-      <p className="mt-0.5 text-sm text-gray-400">{label}</p>
-      {sub && <p className="mt-1 text-xs text-gray-600">{sub}</p>}
+      <p className="mt-3 text-[22px] font-bold tracking-tight text-gray-900">{value.toLocaleString()}</p>
+      <p className="mt-0.5 text-[13px] font-medium text-gray-500">{label}</p>
+      {sub && <p className="mt-1 text-[12px] text-gray-400">{sub}</p>}
     </div>
   );
 }
@@ -113,7 +113,7 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 shadow-xl">
+    <div className="rounded-xl border border-gray-100 bg-white px-3 py-2 shadow-lg">
       {label && <p className="mb-1 text-xs text-gray-400">{label}</p>}
       {payload.map((p) => (
         <p key={p.name} className="text-sm font-medium" style={{ color: p.color }}>
@@ -131,11 +131,11 @@ function HeatmapCell({ count, max }: { count: number; max: number }) {
   const alpha = Math.round(intensity * 255)
     .toString(16)
     .padStart(2, '0');
-  const bg = count === 0 ? '#1f2937' : `#6366f1${alpha}`;
+  const bg = count === 0 ? '#f3f4f6' : `#6366f1${alpha}`;
 
   return (
     <div
-      className="h-6 w-6 rounded-sm border border-gray-800 transition-colors"
+      className="h-6 w-6 rounded-sm border border-gray-100 transition-colors"
       style={{ backgroundColor: bg }}
       title={`${count} uses`}
     />
@@ -188,7 +188,7 @@ export function AnalyticsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex h-full items-center justify-center bg-gray-50">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand-600 border-t-transparent" />
       </div>
     );
@@ -197,18 +197,18 @@ export function AnalyticsPage() {
   return (
     <div className="flex h-full flex-col">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-800 bg-gray-900 px-6 py-4">
+      <div className="border-b bg-white px-6 py-5" style={{ borderColor: 'var(--color-border)' }}>
         <div className="flex items-center gap-3">
-          <ChartBarIcon className="h-6 w-6 text-brand-400" />
+          <ChartBarIcon className="h-6 w-6 text-brand-500" />
           <div>
-            <h1 className="text-xl font-bold text-white">Analytics</h1>
+            <h1 className="text-[17px] font-bold tracking-tight text-gray-900">Analytics</h1>
             <p className="text-sm text-gray-400">Your prompt usage insights</p>
           </div>
         </div>
       </div>
 
       {/* ── Body ────────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6" style={{ background: 'var(--color-bg)' }}>
         {/* Stats Cards */}
         {summary && (
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -240,27 +240,27 @@ export function AnalyticsPage() {
         )}
 
         {/* Top Prompts Bar Chart */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-          <h2 className="mb-4 text-sm font-semibold text-white flex items-center gap-2">
-            <ArrowTrendingUpIcon className="h-4 w-4 text-brand-400" />
+        <div className="rounded-[14px] border bg-white p-6 shadow-card" style={{ borderColor: 'var(--color-border)' }}>
+          <h2 className="mb-4 text-[13px] font-semibold text-gray-700 flex items-center gap-2">
+            <ArrowTrendingUpIcon className="h-4 w-4 text-brand-500" />
             Top Prompts by Usage
           </h2>
           {topPrompts.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-500">No data yet.</p>
+            <p className="py-8 text-center text-sm text-gray-400">No data yet.</p>
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={topPrompts} margin={{ top: 4, right: 4, bottom: 40, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
                 <XAxis
                   dataKey="title"
-                  tick={{ fill: '#9ca3af', fontSize: 11 }}
+                  tick={{ fill: '#6b7280', fontSize: 11 }}
                   tickFormatter={(v: string) => v.length > 20 ? v.slice(0, 20) + '…' : v}
                   angle={-35}
                   textAnchor="end"
                   interval={0}
                 />
-                <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#1f2937' }} />
+                <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f9fafb' }} />
                 <Bar dataKey="use_count" name="Uses" fill="#6366f1" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -270,10 +270,10 @@ export function AnalyticsPage() {
         {/* Platform Breakdown (Pie) + Quality Trend (Line) */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Platform Pie */}
-          <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-            <h2 className="mb-4 text-sm font-semibold text-white">Platform Breakdown</h2>
+          <div className="rounded-[14px] border bg-white p-6 shadow-card" style={{ borderColor: 'var(--color-border)' }}>
+            <h2 className="mb-4 text-[13px] font-semibold text-gray-700">Platform Breakdown</h2>
             {platforms.length === 0 ? (
-              <p className="py-8 text-center text-sm text-gray-500">No data yet.</p>
+              <p className="py-8 text-center text-sm text-gray-400">No data yet.</p>
             ) : (
               <div className="flex items-center gap-4">
                 <ResponsiveContainer width="55%" height={200}>
@@ -300,9 +300,9 @@ export function AnalyticsPage() {
                         if (!active || !payload?.length) return null;
                         const d = payload[0].payload as PlatformBreakdown;
                         return (
-                          <div className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm">
-                            <p className="font-medium capitalize text-white">{d.platform}</p>
-                            <p className="text-gray-400">{d.count} uses ({d.percentage.toFixed(1)}%)</p>
+                          <div className="rounded-xl border border-gray-100 bg-white px-3 py-2 text-sm shadow-lg">
+                            <p className="font-medium capitalize text-gray-900">{d.platform}</p>
+                            <p className="text-gray-500">{d.count} uses ({d.percentage.toFixed(1)}%)</p>
                           </div>
                         );
                       }}
@@ -319,9 +319,9 @@ export function AnalyticsPage() {
                           className="h-2 w-2 rounded-full"
                           style={{ background: PIE_COLORS[p.platform] || CHART_COLORS[0] }}
                         />
-                        <span className="capitalize text-gray-300">{p.platform}</span>
+                        <span className="capitalize text-gray-600">{p.platform}</span>
                       </span>
-                      <span className="text-gray-500">{p.percentage.toFixed(1)}%</span>
+                      <span className="text-gray-400">{p.percentage.toFixed(1)}%</span>
                     </li>
                   ))}
                 </ul>
@@ -330,10 +330,10 @@ export function AnalyticsPage() {
           </div>
 
           {/* Weekly Uses Line */}
-          <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-            <h2 className="mb-4 text-sm font-semibold text-white">Usage Over Time</h2>
+          <div className="rounded-[14px] border bg-white p-6 shadow-card" style={{ borderColor: 'var(--color-border)' }}>
+            <h2 className="mb-4 text-[13px] font-semibold text-gray-700">Usage Over Time</h2>
             {topPrompts.length === 0 ? (
-              <p className="py-8 text-center text-sm text-gray-500">No data yet.</p>
+              <p className="py-8 text-center text-sm text-gray-400">No data yet.</p>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart
@@ -344,12 +344,12 @@ export function AnalyticsPage() {
                   }))}
                   margin={{ top: 4, right: 4, bottom: 4, left: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                  <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 11 }} />
-                  <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 11 }} />
+                  <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend
-                    wrapperStyle={{ fontSize: '12px', color: '#9ca3af' }}
+                    wrapperStyle={{ fontSize: '12px', color: '#6b7280' }}
                   />
                   <Line
                     type="monotone"
@@ -376,16 +376,16 @@ export function AnalyticsPage() {
         </div>
 
         {/* Active Hours Heatmap */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-6">
-          <h2 className="mb-4 text-sm font-semibold text-white flex items-center gap-2">
-            <ClockIcon className="h-4 w-4 text-brand-400" />
+        <div className="rounded-[14px] border bg-white p-6 shadow-card" style={{ borderColor: 'var(--color-border)' }}>
+          <h2 className="mb-4 text-[13px] font-semibold text-gray-700 flex items-center gap-2">
+            <ClockIcon className="h-4 w-4 text-brand-500" />
             Active Hours Heatmap
           </h2>
           <div className="overflow-x-auto">
             {/* Hour labels */}
             <div className="flex items-center gap-1 mb-1 ml-10">
               {Array.from({ length: 24 }, (_, h) => (
-                <div key={h} className="w-6 text-center text-[10px] text-gray-600">
+                <div key={h} className="w-6 text-center text-[10px] text-gray-400">
                   {h % 6 === 0 ? `${h}h` : ''}
                 </div>
               ))}
@@ -394,7 +394,7 @@ export function AnalyticsPage() {
             {/* Grid */}
             {DAYS.map((day, dayIdx) => (
               <div key={day} className="flex items-center gap-1 mb-1">
-                <span className="w-8 text-right text-[10px] text-gray-500 mr-1">{day}</span>
+                <span className="w-8 text-right text-[10px] text-gray-400 mr-1">{day}</span>
                 {heatmapMatrix[dayIdx].map((count, hour) => (
                   <HeatmapCell key={`${day}-${hour}`} count={count} max={maxHeatmap} />
                 ))}
@@ -403,13 +403,13 @@ export function AnalyticsPage() {
 
             {/* Legend */}
             <div className="mt-3 flex items-center gap-2">
-              <span className="text-[10px] text-gray-500">Less</span>
+              <span className="text-[10px] text-gray-400">Less</span>
               {[0, 0.25, 0.5, 0.75, 1].map((v) => {
                 const alpha = Math.round(v * 255).toString(16).padStart(2, '0');
-                const bg = v === 0 ? '#1f2937' : `#6366f1${alpha}`;
+                const bg = v === 0 ? '#f3f4f6' : `#6366f1${alpha}`;
                 return <div key={v} className="h-4 w-4 rounded-sm" style={{ backgroundColor: bg }} />;
               })}
-              <span className="text-[10px] text-gray-500">More</span>
+              <span className="text-[10px] text-gray-400">More</span>
             </div>
           </div>
         </div>

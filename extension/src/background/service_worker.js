@@ -233,13 +233,12 @@ async function handleMessage(message, sender) {
     }
 
     case 'GET_SETTINGS': {
-      const [backendUrl, authToken, autoSubmit, darkMode] = await Promise.all([
+      const [backendUrl, authToken, autoSubmit] = await Promise.all([
         getSetting('BACKEND_URL', DEFAULT_BACKEND_URL),
         getSetting('auth_token', ''),
         getSetting('auto_submit', false),
-        getSetting('dark_mode', true),
       ]);
-      return { settings: { backendUrl, authToken, autoSubmit, darkMode } };
+      return { settings: { backendUrl, authToken, autoSubmit } };
     }
 
     case 'SET_SETTING': {
@@ -268,14 +267,14 @@ async function handleMessage(message, sender) {
       if (!text || !text.trim()) return { error: 'No text to refine.' };
       const backendUrl = await getSetting('BACKEND_URL', DEFAULT_BACKEND_URL);
       const authToken = await getSetting('auth_token', null);
-      if (!authToken) return { error: 'Not logged in. Open PromptVault settings and paste your auth token.' };
+      if (!authToken) return { error: 'Not logged in. Please log in to PromptVault at localhost:5173.' };
       try {
         const resp = await fetch(`${backendUrl.replace(/\/$/, '')}/v1/ai/refine`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
           body: JSON.stringify({ body: text, style, prompt_id: null }),
         });
-        if (resp.status === 401) return { error: 'Auth token expired. Re-login and update extension settings.' };
+        if (resp.status === 401) return { error: 'Session expired. Please log in to PromptVault again.' };
         if (!resp.ok) return { error: `Backend error ${resp.status}` };
         const data = await resp.json();
         return {

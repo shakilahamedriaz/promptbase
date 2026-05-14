@@ -2,36 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=420, initial-scale=1.0">
+  <meta name="viewport" content="width=380, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:;">
   <title>PromptVault Pro</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-
 <div id="app">
+
+  <!-- ── Header ──────────────────────────────────── -->
   <header>
-    <div class="logo">⬡ PromptVault Pro</div>
-    <div class="platform-badge" id="platform-badge"></div>
-    <button id="theme-toggle" title="Toggle theme">☀</button>
+    <div class="header-brand">
+      <div class="logo-mark">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 1L12.5 4V10L7 13L1.5 10V4L7 1Z" fill="white" fill-opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="logo-text">PromptVault<span class="pro-badge">Pro</span></div>
+    </div>
+    <div id="platform-chip" class="platform-chip hidden"></div>
+    <button id="theme-toggle" class="theme-toggle" title="Toggle dark mode">
+      <svg id="theme-icon-light" width="14" height="14" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="4" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <svg id="theme-icon-dark" width="14" height="14" viewBox="0 0 20 20" fill="none" class="hidden">
+        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </header>
 
-  <div class="search-bar">
-    <input type="text" id="search-input" placeholder="Search prompts..." autocomplete="off">
-    <button id="add-btn" title="Add new prompt">+</button>
+  <!-- ── Search Row (Library + History only) ─────── -->
+  <div class="search-row" id="search-row">
+    <div class="search-wrap">
+      <svg class="search-icon" width="14" height="14" viewBox="0 0 20 20" fill="none">
+        <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M13 13L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <input type="text" id="search-input" placeholder="Search prompts… (press /)" autocomplete="off">
+    </div>
+    <button id="add-btn" title="New prompt (N)">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 2V12M2 7H12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
   </div>
 
+  <!-- ── Tabs ────────────────────────────────────── -->
   <nav class="tabs">
     <button class="tab active" data-tab="library">Library</button>
+    <button class="tab" data-tab="refine">Refine</button>
     <button class="tab" data-tab="history">History</button>
     <button class="tab" data-tab="settings">Settings</button>
   </nav>
 
-  <!-- Library Tab -->
+  <!-- ────────────────────────────────────────────── -->
+  <!-- Library Tab                                    -->
+  <!-- ────────────────────────────────────────────── -->
   <div class="tab-content active" id="tab-library">
     <div class="filter-row">
       <select id="category-filter">
-        <option value="">All Categories</option>
+        <option value="">All categories</option>
         <option value="coding">Coding</option>
         <option value="writing">Writing</option>
         <option value="research">Research</option>
@@ -39,93 +70,304 @@
         <option value="general">General</option>
       </select>
       <select id="sort-select">
-        <option value="updated">Recently Used</option>
-        <option value="alpha">Alphabetical</option>
-        <option value="most_used">Most Used</option>
-        <option value="created">Date Created</option>
+        <option value="updated">Recent</option>
+        <option value="alpha">A–Z</option>
+        <option value="most_used">Most used</option>
+        <option value="created">Newest</option>
       </select>
-      <button id="fav-filter" title="Show favorites only">★</button>
+      <button id="fav-filter" class="fav-filter-btn" title="Favorites only">
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 14.27l-4.77 2.51.91-5.32L2.27 7.62l5.34-.78L10 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </div>
+
     <div id="prompt-list" class="prompt-list"></div>
+
+    <!-- Empty state with templates -->
     <div id="empty-state" class="empty-state hidden">
-      <p>No prompts yet.</p>
-      <button id="empty-add-btn">Add your first prompt</button>
+      <div class="empty-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M7 9h10M7 12h7M7 15h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="empty-headline">Your library is empty</div>
+      <div class="empty-sub">Start with a template or create your own</div>
+      <div class="template-grid" id="template-grid"></div>
+      <span class="empty-or">or</span>
+      <button id="empty-add-btn" class="btn-secondary">Create custom prompt</button>
     </div>
   </div>
 
-  <!-- History Tab -->
+  <!-- ────────────────────────────────────────────── -->
+  <!-- Refine Tab                                     -->
+  <!-- ────────────────────────────────────────────── -->
+  <div class="tab-content hidden" id="tab-refine">
+
+    <!-- Input -->
+    <div class="refine-section">
+      <div class="refine-label">Prompt to refine</div>
+      <textarea id="refine-input" rows="4" placeholder="Paste your rough prompt here…" spellcheck="false"></textarea>
+      <button id="refine-grab-btn" class="refine-grab-btn">
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+          <path d="M3 10h14M10 3l7 7-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Grab text from AI page
+      </button>
+    </div>
+
+    <!-- Style -->
+    <div class="refine-section">
+      <div class="refine-label">Style</div>
+      <div class="style-chips">
+        <button class="style-chip active" data-style="professional">Professional</button>
+        <button class="style-chip" data-style="creative">Creative</button>
+        <button class="style-chip" data-style="technical">Technical</button>
+        <button class="style-chip" data-style="concise">Concise</button>
+        <button class="style-chip" data-style="custom">Custom</button>
+      </div>
+      <div id="custom-instruction-wrap">
+        <textarea id="custom-instruction" rows="2" placeholder="Describe your refinement goal… e.g. 'Make it suitable for a 10-year-old, use simple analogies'"></textarea>
+      </div>
+    </div>
+
+    <!-- Refine button -->
+    <button id="btn-refine" class="btn-refine">
+      <svg class="btn-icon" width="13" height="13" viewBox="0 0 20 20" fill="none">
+        <path d="M10 2l1.5 4h4l-3 2.5 1 4L10 10l-3.5 2.5 1-4L4.5 6h4L10 2z" fill="currentColor"/>
+      </svg>
+      <span class="btn-label">Refine with AI</span>
+      <span class="spinner hidden"></span>
+    </button>
+
+    <!-- Result -->
+    <div class="refine-result" id="refine-result">
+
+      <!-- Scores -->
+      <div class="score-row">
+        <div class="score-item">
+          <span class="score-label">Before</span>
+          <span class="score-badge before" id="score-before">—</span>
+        </div>
+        <div class="score-arrow">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+            <path d="M5 10h10M12 7l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="score-item">
+          <span class="score-label">After</span>
+          <span class="score-badge after" id="score-after">—</span>
+        </div>
+        <span class="score-delta" id="score-delta"></span>
+      </div>
+
+      <!-- AI explanation -->
+      <div class="refine-explanation" id="refine-explanation"></div>
+
+      <!-- Diff view -->
+      <div class="diff-view" id="diff-view">
+        <div class="diff-header">
+          <div class="diff-col-label">Original</div>
+          <div class="diff-col-label">Refined</div>
+        </div>
+        <div class="diff-body">
+          <div class="diff-side before" id="diff-before"></div>
+          <div class="diff-side after"  id="diff-after"></div>
+        </div>
+      </div>
+
+      <!-- Full refined text -->
+      <div class="refine-output-label">Full refined prompt</div>
+      <div class="refine-output" id="refine-output"></div>
+
+      <!-- Actions -->
+      <div class="refine-actions">
+        <button id="refine-copy-btn" class="btn-ghost">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+            <rect x="7" y="7" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M13 7V5a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Copy
+        </button>
+        <button id="refine-insert-btn" class="btn-ghost">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+            <path d="M3 10h14M10 3l7 7-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Insert
+        </button>
+        <button id="refine-save-btn" class="btn-ghost">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+            <path d="M5 3h10a2 2 0 012 2v12l-7-3-7 3V5a2 2 0 012-2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────────────────── -->
+  <!-- History Tab                                    -->
+  <!-- ────────────────────────────────────────────── -->
   <div class="tab-content hidden" id="tab-history">
     <div id="history-list" class="prompt-list"></div>
-    <div id="history-empty" class="empty-state hidden"><p>No history yet.</p></div>
+    <div id="history-empty" class="empty-state hidden">
+      <div class="empty-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M12 8v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="empty-headline">No history yet</div>
+      <div class="empty-sub">Your prompt usage will appear here</div>
+    </div>
   </div>
 
-  <!-- Settings Tab -->
+  <!-- ────────────────────────────────────────────── -->
+  <!-- Settings Tab                                   -->
+  <!-- ────────────────────────────────────────────── -->
   <div class="tab-content hidden" id="tab-settings">
-    <div class="settings-group">
-      <label>Backend URL</label>
-      <input type="text" id="backend-url-input" placeholder="http://localhost:8000">
-    </div>
-    <div class="settings-group">
-      <label>Auth Token (JWT)</label>
-      <input type="text" id="auth-token-input" placeholder="Paste JWT token">
-    </div>
-    <div class="settings-group toggle-row">
-      <label>Auto-submit after paste</label>
-      <input type="checkbox" id="auto-submit-toggle">
-    </div>
-    <div class="settings-group toggle-row">
-      <label>Dark Mode</label>
-      <input type="checkbox" id="dark-mode-toggle" checked>
-    </div>
-    <button id="save-settings-btn" class="btn-primary">Save Settings</button>
-    <button id="sync-now-btn" class="btn-secondary">Sync Now</button>
-    <div id="settings-status"></div>
-  </div>
-</div>
 
-<!-- Add/Edit Modal -->
+    <!-- Account -->
+    <div class="settings-section">
+      <!-- Logged in -->
+      <div id="user-card" class="user-card hidden">
+        <div class="user-avatar" id="user-avatar">U</div>
+        <div class="user-info">
+          <div class="user-email" id="user-email">–</div>
+          <div class="user-connected">● Connected</div>
+        </div>
+        <button id="sign-out-btn" class="btn-ghost-sm">Sign out</button>
+      </div>
+      <!-- Logged out -->
+      <div id="sign-in-cta" class="sign-in-cta">
+        <p>Sign in to sync your prompts and access AI refinement.</p>
+        <button id="sign-in-btn" class="btn-sign-in">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2a8 8 0 100 16A8 8 0 0010 2z" stroke="currentColor" stroke-width="1.4"/>
+            <path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          Open PromptVault to sign in
+        </button>
+      </div>
+    </div>
+
+    <!-- Preferences -->
+    <div class="settings-section">
+      <div class="settings-section-title">Preferences</div>
+      <label class="toggle-row">
+        <span>Dark mode</span>
+        <input type="checkbox" id="dark-mode-toggle">
+      </label>
+      <label class="toggle-row">
+        <span>Auto-submit after paste</span>
+        <input type="checkbox" id="auto-submit-toggle">
+      </label>
+      <div style="margin-top:10px">
+        <button id="sync-now-btn" class="btn-secondary full">Sync now</button>
+      </div>
+    </div>
+
+    <!-- Advanced (collapsed) -->
+    <div class="settings-section">
+      <button id="advanced-toggle" class="advanced-toggle">
+        Advanced
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+          <path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div id="advanced-body" class="advanced-body">
+        <div>
+          <div class="advanced-label">Backend URL</div>
+          <input type="text" id="backend-url-input" class="advanced-input" placeholder="http://localhost:8000">
+          <div class="advanced-hint">Change only if running PromptVault on a custom port or server.</div>
+        </div>
+        <button id="save-backend-btn" class="btn-primary">Save URL</button>
+      </div>
+    </div>
+
+    <!-- Shortcuts cheatsheet -->
+    <div class="settings-section">
+      <div class="settings-section-title">Keyboard shortcuts</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;color:var(--text-2)">Focus search</span>
+          <span class="kbd">/</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;color:var(--text-2)">New prompt</span>
+          <span class="kbd">N</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;color:var(--text-2)">Switch tabs</span>
+          <span class="kbd">Ctrl 1–4</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;color:var(--text-2)">Refine prompt</span>
+          <span class="kbd">Ctrl ↵</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;color:var(--text-2)">Close modal</span>
+          <span class="kbd">Esc</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-settings -->
+
+</div><!-- /app -->
+
+<!-- ── Add/Edit Modal ─────────────────────────────── -->
 <div id="modal" class="modal hidden">
   <div class="modal-content">
     <div class="modal-header">
       <h3 id="modal-title">New Prompt</h3>
-      <button id="modal-close">✕</button>
+      <button id="modal-close" class="modal-close-btn">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+          <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
     </div>
-    <input type="text" id="prompt-title" placeholder="Title" maxlength="200">
-    <textarea id="prompt-body" placeholder="Prompt text... Use {{variable}} for templates" rows="8"></textarea>
+    <input type="text" id="prompt-title" class="modal-input" placeholder="Title" maxlength="200">
+    <textarea id="prompt-body" class="modal-textarea" placeholder="Prompt text… Use {{variable}} for templates" rows="7"></textarea>
     <div class="modal-meta">
-      <select id="prompt-category">
+      <select id="prompt-category" class="modal-select">
         <option value="general">General</option>
         <option value="coding">Coding</option>
         <option value="writing">Writing</option>
         <option value="research">Research</option>
         <option value="marketing">Marketing</option>
       </select>
-      <input type="text" id="prompt-tags" placeholder="tags, comma, separated">
+      <input type="text" id="prompt-tags" class="modal-input" placeholder="tags, comma, separated">
     </div>
     <div class="char-count" id="char-count">0 characters</div>
     <div class="modal-actions">
-      <button id="modal-cancel" class="btn-secondary">Cancel</button>
+      <button id="modal-cancel" class="btn-ghost">Cancel</button>
       <button id="modal-save" class="btn-primary">Save</button>
     </div>
   </div>
 </div>
 
-<!-- Variable Fill Modal -->
+<!-- ── Variable Fill Modal ────────────────────────── -->
 <div id="var-modal" class="modal hidden">
   <div class="modal-content">
     <div class="modal-header">
       <h3>Fill Variables</h3>
-      <button id="var-modal-close">✕</button>
+      <button id="var-modal-close" class="modal-close-btn">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+          <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
     </div>
     <div id="var-fields"></div>
     <div class="modal-actions">
-      <button id="var-cancel" class="btn-secondary">Cancel</button>
+      <button id="var-cancel" class="btn-ghost">Cancel</button>
       <button id="var-insert" class="btn-primary">Insert Prompt</button>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
+<!-- ── Toast ──────────────────────────────────────── -->
 <div id="toast" class="toast hidden"></div>
 
 <script type="module" src="popup.js"></script>

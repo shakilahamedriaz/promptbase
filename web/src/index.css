@@ -2,31 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── CSS Variables for theming ─────────────────────────────────────────────── */
+/* ── Google Fonts ───────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&display=swap');
 
+/* ── CSS Variables ──────────────────────────────────────────────────────────── */
 :root {
-  --color-bg: theme('colors.gray.950');
-  --color-surface: theme('colors.gray.900');
-  --color-border: theme('colors.gray.800');
-  --color-text: theme('colors.gray.100');
-  --color-text-muted: theme('colors.gray.400');
+  --color-bg: #F4F3F8;
+  --color-surface: #FFFFFF;
+  --color-sidebar: #FAFAFE;
+  --color-border: #E4E2EE;
+  --color-border-strong: #D4D0E8;
+  --color-text: #0F0F1A;
+  --color-text-muted: #5C5C7A;
+  --radius: 12px;
 }
 
-.light {
-  --color-bg: theme('colors.gray.50');
-  --color-surface: theme('colors.white');
-  --color-border: theme('colors.gray.200');
-  --color-text: theme('colors.gray.900');
-  --color-text-muted: theme('colors.gray.500');
+.dark {
+  --color-bg: #0F0F1A;
+  --color-surface: #161625;
+  --color-sidebar: #13131F;
+  --color-border: #1E1E35;
+  --color-border-strong: #2A2A48;
+  --color-text: #F1F0FF;
+  --color-text-muted: #8B8BAD;
 }
 
-/* ── Base resets ────────────────────────────────────────────────────────────── */
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+/* ── Base ───────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
 
 html {
   scroll-behavior: smooth;
@@ -39,69 +41,95 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   background-color: var(--color-bg);
   color: var(--color-text);
-  line-height: 1.5;
+  line-height: 1.6;
   min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
 }
 
-/* ── Scrollbar styling ─────────────────────────────────────────────────────── */
+/* ── Scrollbar ──────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #C4B5FD; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #A78BFA; }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: theme('colors.gray.700');
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: theme('colors.gray.600');
-}
-
-/* ── Focus ring ─────────────────────────────────────────────────────────────── */
-
+/* ── Focus ──────────────────────────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid theme('colors.brand.500');
+  outline: 2px solid #8B5CF6;
   outline-offset: 2px;
+  border-radius: 6px;
 }
 
 /* ── Selection ──────────────────────────────────────────────────────────────── */
+::selection { background-color: #DDD6FE; color: #4C1D95; }
 
-::selection {
-  background-color: theme('colors.brand.600');
-  color: white;
+/* ── Utilities ──────────────────────────────────────────────────────────────── */
+.font-mono { font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace; }
+
+/* ── Recharts ───────────────────────────────────────────────────────────────── */
+.recharts-tooltip-wrapper { outline: none !important; }
+.recharts-tooltip-content {
+  background: #ffffff !important;
+  border: 1px solid #E4E2EE !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  color: #1a1a2e !important;
 }
 
-/* ── Utility overrides ─────────────────────────────────────────────────────── */
-
-.font-mono {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+/* ── Card ───────────────────────────────────────────────────────────────────── */
+.pv-card {
+  background: #ffffff;
+  border: 1px solid #E4E2EE;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.pv-card:hover {
+  border-color: #C4B5FD;
+  box-shadow: 0 6px 16px rgba(124,58,237,0.09), 0 1px 3px rgba(0,0,0,0.06);
 }
 
-/* ── React Diff Viewer dark mode override ──────────────────────────────────── */
-
-.dark [class*="diff-viewer"] pre,
-.dark [class*="diff-viewer"] td {
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 12px !important;
-  line-height: 1.6 !important;
+/* ── Stat card ──────────────────────────────────────────────────────────────── */
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #E4E2EE;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  padding: 20px 24px;
 }
 
-/* ── Recharts tooltip ───────────────────────────────────────────────────────── */
-
-.recharts-tooltip-wrapper {
-  outline: none !important;
+/* ── Input base ─────────────────────────────────────────────────────────────── */
+.pv-input {
+  background: #F8F7FF;
+  border: 1px solid #DDD9ED;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #0F0F1A;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+.pv-input::placeholder { color: #9CA3AF; }
+.pv-input:focus {
+  outline: none;
+  border-color: #A78BFA;
+  box-shadow: 0 0 0 3px rgba(167,139,250,0.15);
+  background: #ffffff;
 }
 
-/* ── Animation utilities ────────────────────────────────────────────────────── */
+/* ── Default input border color ─────────────────────────────────────────────── */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+select,
+textarea {
+  border-color: var(--color-border);
+}
 
 @layer utilities {
-  .animate-in {
-    animation: fadeIn 0.2s ease-out;
-  }
+  .animate-in { animation: fadeIn 0.2s ease-out; }
 }

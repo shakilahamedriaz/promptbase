@@ -29,7 +29,7 @@ export function useAuth() {
   }, [logout, navigate]);
 
   const handleGoogleOAuth = useCallback(() => {
-    const apiUrl = (import.meta as { env: Record<string, string> }).env.VITE_API_URL || 'http://localhost:8000';
+    const apiUrl = (import.meta as unknown as { env: Record<string, string> }).env.VITE_API_URL || 'http://localhost:8000';
     window.location.href = `${apiUrl}/v1/auth/google`;
   }, []);
 
