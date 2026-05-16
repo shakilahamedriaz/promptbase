@@ -67,19 +67,30 @@ export function RegisterPage() {
       <div className="flex flex-1 items-start justify-center px-6 py-12 overflow-y-auto" style={{ background: '#FAFAFE' }}>
         <div className="w-full max-w-[360px]">
 
-          {/* Mobile logo */}
-          <div className="flex items-center gap-2.5 mb-6 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: '#7C3AED' }}>
-              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
-            </div>
-            <span className="text-[14px] font-bold text-gray-900">PromptVault Pro</span>
-          </div>
-
           {/* Heading */}
           <div className="mb-7">
-            <h1 className="text-[26px] font-bold text-gray-900 tracking-tight leading-tight mb-1.5">
+            {/* Brand eyebrow */}
+            <div className="flex items-center gap-2 mb-5">
+              <div
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
+                style={{ background: '#7C3AED' }}
+              >
+                <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+              </div>
+              <span
+                className="text-[11px] font-bold tracking-widest uppercase"
+                style={{ color: '#7C3AED', letterSpacing: '0.1em' }}
+              >
+                PromptVault Pro
+              </span>
+            </div>
+
+            <h1
+              className="font-extrabold leading-[1.05] tracking-tight mb-2"
+              style={{ fontSize: 'clamp(32px, 3.8vw, 42px)', color: '#0f172a', letterSpacing: '-0.04em' }}
+            >
               Create your account
             </h1>
             <p className="text-[14px] text-gray-500">

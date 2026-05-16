@@ -29,24 +29,24 @@ const EDGES: [NodeId, NodeId, number][] = [
   ['c2','o1',2.8], ['c2','o2',1.4], ['c2','o3',1.9],
 ];
 
-// Stable staggered delays — never use Math.random() in JSX render
 const NODE_IDS = Object.keys(NODES) as NodeId[];
 const NODE_DELAYS: Record<string, number> = Object.fromEntries(
   NODE_IDS.map((id, i) => [id, i * 0.07])
 );
 
+// Light-bg friendly colors — saturated enough to show on white
 const LAYER_COLORS: Record<string, string> = {
-  input:  'rgba(99,102,241,0.9)',
-  hidden: 'rgba(139,92,246,0.7)',
-  core:   'rgba(167,139,250,1)',
-  output: 'rgba(52,211,153,0.9)',
+  input:  'rgba(99,102,241,0.85)',
+  hidden: 'rgba(124,58,237,0.65)',
+  core:   'rgba(109,40,217,0.9)',
+  output: 'rgba(5,150,105,0.85)',
 };
 
 const LAYER_GLOW: Record<string, string> = {
-  input:  'rgba(99,102,241,0.3)',
-  hidden: 'rgba(139,92,246,0.25)',
-  core:   'rgba(167,139,250,0.4)',
-  output: 'rgba(52,211,153,0.3)',
+  input:  'rgba(99,102,241,0.15)',
+  hidden: 'rgba(124,58,237,0.12)',
+  core:   'rgba(109,40,217,0.18)',
+  output: 'rgba(5,150,105,0.15)',
 };
 
 function NeuralNetwork() {
@@ -54,16 +54,17 @@ function NeuralNetwork() {
     <svg
       viewBox="0 0 100 100"
       className="absolute inset-0 w-full h-full"
-      style={{ opacity: 0.75 }}
+      style={{ opacity: 0.55 }}
       aria-hidden="true"
     >
       <defs>
         <filter id="node-blur">
-          <feGaussianBlur stdDeviation="0.8" result="blur" />
+          <feGaussianBlur stdDeviation="0.6" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </defs>
 
+      {/* Static connection lines */}
       {EDGES.map(([a, b], i) => {
         const na = NODES[a]; const nb = NODES[b];
         const isOutput = nb.layer === 'output' || na.layer === 'core';
@@ -71,12 +72,13 @@ function NeuralNetwork() {
           <line
             key={i}
             x1={na.x} y1={na.y} x2={nb.x} y2={nb.y}
-            stroke={isOutput ? 'rgba(52,211,153,0.2)' : 'rgba(139,92,246,0.18)'}
-            strokeWidth="0.3"
+            stroke={isOutput ? 'rgba(5,150,105,0.22)' : 'rgba(99,102,241,0.2)'}
+            strokeWidth="0.35"
           />
         );
       })}
 
+      {/* Animated flow pulses */}
       {EDGES.filter((_, i) => i % 3 === 0).map(([a, b, delay], i) => {
         const na = NODES[a]; const nb = NODES[b];
         const isOutput = nb.layer === 'output';
@@ -84,8 +86,8 @@ function NeuralNetwork() {
           <line
             key={`flow-${i}`}
             x1={na.x} y1={na.y} x2={nb.x} y2={nb.y}
-            stroke={isOutput ? 'rgba(52,211,153,0.6)' : 'rgba(167,139,250,0.5)'}
-            strokeWidth="0.4"
+            stroke={isOutput ? 'rgba(5,150,105,0.55)' : 'rgba(124,58,237,0.5)'}
+            strokeWidth="0.45"
             strokeDasharray="4 196"
             strokeLinecap="round"
             style={{
@@ -96,6 +98,7 @@ function NeuralNetwork() {
         );
       })}
 
+      {/* Nodes */}
       {NODE_IDS.map(id => {
         const n = NODES[id];
         const color = LAYER_COLORS[n.layer];
@@ -103,13 +106,13 @@ function NeuralNetwork() {
         const r     = n.layer === 'core' ? 2.2 : n.layer === 'input' || n.layer === 'output' ? 1.6 : 1.2;
         return (
           <g key={id} style={{ animation: `auth-node-enter 0.5s ease-out both`, animationDelay: `${NODE_DELAYS[id]}s` }}>
-            <circle cx={n.x} cy={n.y} r={r + 1.5} fill={glow} />
+            <circle cx={n.x} cy={n.y} r={r + 2} fill={glow} />
             <circle cx={n.x} cy={n.y} r={r} fill={color} filter="url(#node-blur)" />
             {n.layer === 'core' && (
               <circle
                 cx={n.x} cy={n.y} r={r + 0.5}
                 fill="none"
-                stroke="rgba(167,139,250,0.5)"
+                stroke="rgba(109,40,217,0.4)"
                 strokeWidth="0.3"
                 style={{ animation: 'auth-ping 2.5s ease-out infinite', transformOrigin: `${n.x}px ${n.y}px` }}
               />
@@ -121,14 +124,13 @@ function NeuralNetwork() {
   );
 }
 
-// All 6 platforms to match the "6 AI platforms" stat
 const CHIPS = [
-  { label: 'GPT-4o',      bg: 'rgba(16,163,127,0.12)',  border: 'rgba(16,163,127,0.28)',  text: '#6EE7B7' },
-  { label: 'Claude',      bg: 'rgba(210,162,70,0.12)',   border: 'rgba(210,162,70,0.28)',  text: '#FCD34D' },
-  { label: 'Gemini',      bg: 'rgba(66,133,244,0.12)',   border: 'rgba(66,133,244,0.28)',  text: '#93C5FD' },
-  { label: 'Llama',       bg: 'rgba(139,92,246,0.12)',   border: 'rgba(139,92,246,0.28)',  text: '#C4B5FD' },
-  { label: 'Perplexity',  bg: 'rgba(20,184,166,0.12)',   border: 'rgba(20,184,166,0.28)',  text: '#5EEAD4' },
-  { label: 'Grok',        bg: 'rgba(148,163,184,0.12)',  border: 'rgba(148,163,184,0.28)', text: '#CBD5E1' },
+  { label: 'GPT-4o',      bg: 'rgba(16,163,127,0.08)',  border: 'rgba(16,163,127,0.25)',  text: '#047857' },
+  { label: 'Claude',      bg: 'rgba(180,130,40,0.08)',   border: 'rgba(180,130,40,0.25)',  text: '#92400e' },
+  { label: 'Gemini',      bg: 'rgba(37,99,235,0.08)',    border: 'rgba(37,99,235,0.25)',   text: '#1d4ed8' },
+  { label: 'Llama',       bg: 'rgba(109,40,217,0.08)',   border: 'rgba(109,40,217,0.25)',  text: '#6d28d9' },
+  { label: 'Perplexity',  bg: 'rgba(13,148,136,0.08)',   border: 'rgba(13,148,136,0.25)',  text: '#0f766e' },
+  { label: 'Grok',        bg: 'rgba(71,85,105,0.08)',    border: 'rgba(71,85,105,0.22)',   text: '#475569' },
 ];
 
 function OutputCard() {
@@ -136,10 +138,10 @@ function OutputCard() {
     <div
       className="w-[228px] rounded-xl p-3.5"
       style={{
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(139,92,246,0.28)',
+        background: 'rgba(255,255,255,0.92)',
+        border: '1px solid rgba(109,40,217,0.18)',
         backdropFilter: 'blur(12px)',
-        boxShadow: '0 20px 48px rgba(0,0,0,0.45)',
+        boxShadow: '0 12px 40px rgba(99,102,241,0.13), 0 2px 8px rgba(0,0,0,0.06)',
         animation: 'auth-node-enter 0.6s ease-out both',
         animationDelay: '0.4s',
       }}
@@ -147,22 +149,22 @@ function OutputCard() {
       <div className="flex items-center gap-1.5 mb-2.5">
         <div
           className="h-1.5 w-1.5 rounded-full"
-          style={{ background: '#34D399', animation: 'auth-glow-pulse 2s ease-in-out infinite' }}
+          style={{ background: '#059669', animation: 'auth-glow-pulse 2s ease-in-out infinite' }}
         />
-        <span className="text-[10px] font-bold tracking-widest" style={{ color: '#34D399', letterSpacing: '0.1em' }}>
+        <span className="text-[10px] font-bold tracking-widest" style={{ color: '#059669', letterSpacing: '0.1em' }}>
           REFINED
         </span>
       </div>
-      <p className="text-[11px] leading-relaxed" style={{ color: '#CBD5E1', fontFamily: 'ui-monospace, monospace' }}>
-        <span style={{ color: '#C4B5FD' }}>You are a senior writer.</span>
+      <p className="text-[11px] leading-relaxed" style={{ color: '#475569', fontFamily: 'ui-monospace, monospace' }}>
+        <span style={{ color: '#6d28d9' }}>You are a senior writer.</span>
         {' '}Write a structured explainer on AI for tech-curious readers with 3 real-world examples.
       </p>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-[10px]" style={{ color: '#94A3B8' }}>Quality score</span>
-        <span className="text-[11px] font-bold" style={{ color: '#34D399' }}>91 / 100</span>
+        <span className="text-[11px] font-bold" style={{ color: '#059669' }}>91 / 100</span>
       </div>
-      <div className="mt-1.5 h-1 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
-        <div className="h-full rounded-full" style={{ width: '91%', background: 'linear-gradient(90deg, #7c3aed, #34d399)' }} />
+      <div className="mt-1.5 h-1 rounded-full" style={{ background: 'rgba(0,0,0,0.06)' }}>
+        <div className="h-full rounded-full" style={{ width: '91%', background: 'linear-gradient(90deg, #7c3aed, #059669)' }} />
       </div>
     </div>
   );
@@ -172,26 +174,27 @@ export function AuthVisual() {
   return (
     <div
       className="relative flex h-full w-full flex-col overflow-hidden select-none"
-      style={{ background: '#0b1020' }}
+      style={{ background: '#F4F3F8' }}
       aria-hidden="true"
     >
-      {/* Background orbs */}
+      {/* Subtle dot grid */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        background:
-          'radial-gradient(ellipse 60% 50% at 20% 25%, rgba(99,102,241,0.12) 0%, transparent 65%), ' +
-          'radial-gradient(ellipse 50% 40% at 80% 75%, rgba(52,211,153,0.07) 0%, transparent 65%), ' +
-          'radial-gradient(ellipse 40% 60% at 65% 20%, rgba(139,92,246,0.08) 0%, transparent 60%)',
-      }} />
-
-      {/* Dot grid */}
-      <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)',
+        backgroundImage: 'radial-gradient(circle, rgba(99,102,241,0.1) 1px, transparent 1px)',
         backgroundSize: '28px 28px',
-        maskImage: 'radial-gradient(ellipse 90% 90% at 50% 50%, black 30%, transparent 100%)',
       }} />
 
-      {/* Neural network fills the whole panel as background */}
+      {/* Neural network fills the panel as background */}
       <NeuralNetwork />
+
+      {/* Gradient shield — fades out the neural network behind the top text block
+          so headline + stats always read clearly against the plain bg colour */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[5]"
+        style={{
+          background:
+            'linear-gradient(to bottom, #F4F3F8 0%, #F4F3F8 28%, rgba(244,243,248,0.6) 48%, transparent 68%)',
+        }}
+      />
 
       {/* ── Top: branding, headline, stats ──────────────────────────── */}
       <div className="relative z-10 shrink-0 px-10 pt-10">
@@ -200,11 +203,11 @@ export function AuthVisual() {
         <div className="flex items-center gap-2.5 mb-9">
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-            style={{ background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.35)' }}
+            style={{ background: 'rgba(109,40,217,0.1)', border: '1px solid rgba(109,40,217,0.22)' }}
           >
-            <SparklesIcon className="h-3.5 w-3.5 text-violet-400" />
+            <SparklesIcon className="h-3.5 w-3.5" style={{ color: '#7c3aed' }} />
           </div>
-          <span className="text-[13px] font-semibold" style={{ color: '#A78BFA', letterSpacing: '-0.01em' }}>
+          <span className="text-[13px] font-semibold" style={{ color: '#6d28d9', letterSpacing: '-0.01em' }}>
             PromptVault Pro
           </span>
         </div>
@@ -215,19 +218,19 @@ export function AuthVisual() {
           style={{
             fontSize: 'clamp(24px, 2.6vw, 32px)',
             letterSpacing: '-0.03em',
-            color: '#F1F5F9',
+            color: '#1e293b',
             textWrap: 'balance',
           } as React.CSSProperties}
         >
           Raw prompts,<br />
-          <span style={{ color: '#A78BFA' }}>refined into results.</span>
+          <span style={{ color: '#7c3aed' }}>refined into results.</span>
         </h2>
 
-        <p className="text-[13px] mb-8" style={{ color: '#94A3B8', lineHeight: '1.65', maxWidth: 248 }}>
+        <p className="text-[13px] mb-8" style={{ color: '#64748b', lineHeight: '1.65', maxWidth: 248 }}>
           Save, organize, and refine prompts across every AI platform.
         </p>
 
-        {/* Stats — placed directly under the pitch where users will read them */}
+        {/* Stats */}
         <div className="flex items-start gap-8">
           {[
             { value: '50k+', label: 'Prompts refined' },
@@ -237,7 +240,7 @@ export function AuthVisual() {
             <div key={s.label}>
               <p
                 className="text-[15px] font-bold"
-                style={{ color: '#E2E8F0', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}
+                style={{ color: '#1e293b', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}
               >
                 {s.value}
               </p>
