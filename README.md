@@ -1,8 +1,8 @@
-# PromptVault Pro
+# Prompt Base
 
 **The prompt marketplace and AI refiner for serious AI users.**
 
-PromptVault Pro is a web-based platform where you save, organize, refine, and share AI prompts. The core product is the web app — a full prompt library, an AI-powered refiner, and a community marketplace where creators publish and monetize their prompts. A companion Chrome Extension brings one-click paste directly into ChatGPT, Claude, Gemini, and other AI tools.
+Prompt Base is a web-based platform where you save, organize, refine, and share AI prompts. The core product is the web app — a full prompt library, an AI-powered refiner, and a community marketplace where creators publish and monetize their prompts. A companion Chrome Extension brings one-click paste directly into ChatGPT, Claude, Gemini, and other AI tools.
 
 ---
 
@@ -111,7 +111,7 @@ Browser → Nginx (TLS termination) → Uvicorn (ASGI)
 ## Project Structure
 
 ```
-promptvault-pro/
+prompt-base/
 │
 ├── web/                        # React Web App (primary product)
 │   └── src/
@@ -165,8 +165,8 @@ promptvault-pro/
 ### Quickstart with Docker
 
 ```bash
-git clone https://github.com/shakilahamedriaz/promptvault-pro.git
-cd promptvault-pro
+git clone https://github.com/shakilahamedriaz/prompt-base.git
+cd prompt-base
 
 cp .env.example .env
 # Fill in your API keys (see Environment Variables below)
@@ -361,4 +361,4 @@ GitHub Actions runs on every push and PR to `main`:
 
 ---
 
-> PromptVault Pro — write better prompts, share the best ones, and paste them anywhere.
+> Prompt Base — write better prompts, share the best ones, and paste them anywhere.
