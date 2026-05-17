@@ -1,33 +1,11 @@
 import { create } from 'zustand';
-import { api, tokenStore } from '@/api/client';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { tokenStore } from '@/api/client';
 
 export interface User {
   id: string;
   email: string;
   display_name: string;
-  avatar_url: string | null;
-  auth_provider: 'email' | 'google';
-  plan: 'free' | 'pro' | 'enterprise';
-  created_at: string;
-  last_login_at: string | null;
-}
-
-interface LoginPayload {
-  email: string;
-  password: string;
-}
-
-interface RegisterPayload {
-  email: string;
-  password: string;
-  display_name: string;
-}
-
-interface AuthResponse {
-  access_token: string;
-  token_type: string;
+  avatar_url?: string;
 }
 
 interface AuthState {
@@ -35,108 +13,70 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (payload: LoginPayload) => Promise<void>;
-  register: (payload: RegisterPayload) => Promise<void>;
-  logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-  loginWithToken: (token: string) => Promise<void>;
-  updateUser: (updates: Partial<User>) => void;
+
+  // Actions
+  setUser: (user: User | null) => void;
+  setIsAuthenticated: (value: boolean) => void;
+  setIsLoading: (value: boolean) => void;
+  setError: (error: string | null) => void;
   clearError: () => void;
+  logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
-// ─── Store ────────────────────────────────────────────────────────────────────
-
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true,
   error: null,
 
-  login: async (payload) => {
-    set({ isLoading: true, error: null });
-    try {
-      const data = await api.post<AuthResponse>('/auth/login', {
-        email: payload.email,
-        password: payload.password,
-      });
-      tokenStore.set(data.access_token);
-      localStorage.setItem('pv_ext_token', data.access_token);
-      window.dispatchEvent(new CustomEvent('PV_AUTH_SYNC', { detail: { token: data.access_token } }));
-      const user = await api.get<User>('/auth/me');
-      set({ user, isAuthenticated: true, isLoading: false, error: null });
-    } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'Login failed. Please check your credentials.';
-      set({ isLoading: false, error: message });
-      throw err;
-    }
+  setUser: (user) => set({ user, isAuthenticated: !!user }),
+  setIsAuthenticated: (value) => set({ isAuthenticated: value }),
+  setIsLoading: (value) => set({ isLoading: value }),
+  setError: (error) => set({ error }),
+  clearError: () => set({ error: null }),
+  logout: () => {
+    tokenStore.clear();
+    set({ user: null, isAuthenticated: false, error: null });
   },
-
-  register: async (payload) => {
-    set({ isLoading: true, error: null });
-    try {
-      const data = await api.post<AuthResponse>('/auth/register', payload);
-      tokenStore.set(data.access_token);
-      localStorage.setItem('pv_ext_token', data.access_token);
-      window.dispatchEvent(new CustomEvent('PV_AUTH_SYNC', { detail: { token: data.access_token } }));
-      const user = await api.get<User>('/auth/me');
-      set({ user, isAuthenticated: true, isLoading: false, error: null });
-    } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'Registration failed. Please try again.';
-      set({ isLoading: false, error: message });
-      throw err;
-    }
-  },
-
-  logout: async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch {
-      // Ignore network errors on logout
-    } finally {
-      tokenStore.clear();
-      localStorage.removeItem('pv_ext_token');
-      window.dispatchEvent(new CustomEvent('PV_AUTH_LOGOUT'));
-      set({ user: null, isAuthenticated: false, error: null });
-    }
-  },
-
   refreshUser: async () => {
     set({ isLoading: true });
     try {
-      const data = await api.post<AuthResponse>('/auth/refresh', {});
-      tokenStore.set(data.access_token);
-      const user = await api.get<User>('/auth/me');
-      set({ user, isAuthenticated: true, isLoading: false });
-    } catch {
-      tokenStore.clear();
-      set({ user: null, isAuthenticated: false, isLoading: false });
+      // Try to get token from localStorage or memory
+      let token = tokenStore.get();
+      if (!token) {
+        token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+        if (token) {
+          tokenStore.set(token);
+        }
+      }
+
+      if (!token) {
+        set({ isLoading: false });
+        return;
+      }
+
+      const response = await fetch('http://localhost:8000/v1/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const user = await response.json();
+        set({ user, isAuthenticated: true, error: null, isLoading: false });
+      } else {
+        // Token is invalid, clear it
+        tokenStore.clear();
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('token');
+        }
+        set({ isAuthenticated: false, user: null, isLoading: false });
+      }
+    } catch (err) {
+      console.error('Failed to refresh user:', err);
+      set({ isAuthenticated: false, user: null, isLoading: false });
     }
   },
-
-  loginWithToken: async (token) => {
-    tokenStore.set(token);
-    localStorage.setItem('pv_ext_token', token);
-    window.dispatchEvent(new CustomEvent('PV_AUTH_SYNC', { detail: { token } }));
-    try {
-      const user = await api.get<User>('/auth/me');
-      set({ user, isAuthenticated: true, isLoading: false, error: null });
-    } catch {
-      tokenStore.clear();
-      localStorage.removeItem('pv_ext_token');
-      set({ user: null, isAuthenticated: false, error: 'Google sign-in failed. Please try again.' });
-    }
-  },
-
-  updateUser: (updates) => {
-    const current = get().user;
-    if (current) {
-      set({ user: { ...current, ...updates } });
-    }
-  },
-
-  clearError: () => set({ error: null }),
 }));

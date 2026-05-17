@@ -312,3 +312,31 @@ async def export_prompts(
         }
         for p in prompts
     ]
+
+
+async def publish_prompt(
+    db: AsyncSession,
+    prompt_id: UUID,
+    user_id: UUID,
+) -> PromptResponse:
+    prompt = await _get_prompt_or_404(db, prompt_id, user_id)
+    prompt.is_public = True
+    prompt.updated_at = datetime.now(timezone.utc)
+    db.add(prompt)
+    await db.flush()
+    await db.refresh(prompt)
+    return PromptResponse.model_validate(prompt)
+
+
+async def unpublish_prompt(
+    db: AsyncSession,
+    prompt_id: UUID,
+    user_id: UUID,
+) -> PromptResponse:
+    prompt = await _get_prompt_or_404(db, prompt_id, user_id)
+    prompt.is_public = False
+    prompt.updated_at = datetime.now(timezone.utc)
+    db.add(prompt)
+    await db.flush()
+    await db.refresh(prompt)
+    return PromptResponse.model_validate(prompt)

@@ -11,10 +11,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, refreshUser } = useAuthStore();
 
   useEffect(() => {
-    // On mount, if not authenticated, try to refresh token from cookie
-    if (!isAuthenticated && !isLoading) {
-      refreshUser();
-    }
+    // On mount, try to load user from stored token
+    refreshUser();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) {

@@ -1,13 +1,7 @@
-import { useThemeStore } from '@/store/themeStore';
+import { useThemeStore } from "@/store/themeStore";
 
 export function useTheme() {
-  const { theme, setTheme, toggleTheme } = useThemeStore();
+  const { theme, setTheme } = useThemeStore();
 
-  return {
-    theme,
-    isDark: theme === 'dark',
-    isLight: theme === 'light',
-    setTheme,
-    toggleTheme,
-  };
+  return { theme, setTheme };
 }

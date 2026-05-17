@@ -8,8 +8,9 @@ import {
   FunnelIcon,
   ArrowsUpDownIcon,
   DocumentDuplicateIcon,
+  GlobeAltIcon,
 } from '@heroicons/react/24/outline';
-import { StarIcon as StarSolid } from '@heroicons/react/24/solid';
+import { StarIcon as StarSolid, GlobeAltIcon as GlobeAltSolid } from '@heroicons/react/24/solid';
 import { clsx } from 'clsx';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/Button';
@@ -17,6 +18,7 @@ import { Modal } from '@/components/Modal';
 import { usePrompts, type Prompt, type SortOption } from '@/hooks/usePrompts';
 import { PromptEditor } from './PromptEditor';
 import { showToast } from '@/components/Toast';
+import { api } from '@/api/client';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -35,10 +37,11 @@ interface PromptCardProps {
   onEdit: (p: Prompt) => void;
   onDelete: (p: Prompt) => void;
   onToggleFavorite: (id: string) => void;
+  onTogglePublish: (id: string) => void;
   onCopy: (body: string) => void;
 }
 
-function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onCopy }: PromptCardProps) {
+function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onTogglePublish, onCopy }: PromptCardProps) {
   const scoreColor =
     prompt.quality_score === null
       ? 'text-gray-400'
@@ -116,6 +119,13 @@ function PromptCard({ prompt, onEdit, onDelete, onToggleFavorite, onCopy }: Prom
 
         {/* Actions — visible on hover */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => onTogglePublish(prompt.id)}
+            className={clsx("rounded-lg p-1.5 transition-colors", prompt.is_public ? "text-green-600 hover:bg-green-50" : "text-gray-400 hover:bg-gray-100 hover:text-gray-700")}
+            title={prompt.is_public ? "Unpublish prompt" : "Publish to marketplace"}
+          >
+            {prompt.is_public ? <GlobeAltSolid className="h-4 w-4" /> : <GlobeAltIcon className="h-4 w-4" />}
+          </button>
           <button
             onClick={() => onCopy(prompt.body)}
             className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
@@ -220,6 +230,22 @@ export function LibraryPage() {
   const handleCopy = (body: string) => {
     navigator.clipboard.writeText(body);
     showToast.success('Copied to clipboard!');
+  };
+
+  const handleTogglePublish = async (promptId: string) => {
+    try {
+      const prompt = prompts.find(p => p.id === promptId);
+      if (!prompt) return;
+
+      const endpoint = prompt.is_public ? 'unpublish' : 'publish';
+      await api.patch(`/prompts/${promptId}/${endpoint}`);
+
+      showToast.success(prompt.is_public ? 'Unpublished from marketplace' : 'Published to marketplace');
+      // Refetch prompts to update UI
+      window.location.reload();
+    } catch {
+      showToast.error('Failed to update publish status.');
+    }
   };
 
   return (
@@ -341,6 +367,7 @@ export function LibraryPage() {
                   onEdit={handleEdit}
                   onDelete={setDeleteTarget}
                   onToggleFavorite={toggleFavorite}
+                  onTogglePublish={handleTogglePublish}
                   onCopy={handleCopy}
                 />
               ))}

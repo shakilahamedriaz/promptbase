@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.database import Base, engine
 from app.redis_client import close_redis
-from app.routers import auth, prompts, ai, history, analytics, billing
+from app.routers import auth, prompts, ai, history, analytics, billing, marketplace, creators, reviews, earnings
 
 settings = get_settings()
 
@@ -45,6 +45,10 @@ app.add_middleware(
 # Routers
 app.include_router(auth.router, prefix="/v1")
 app.include_router(prompts.router, prefix="/v1")
+app.include_router(marketplace.router, prefix="/v1")
+app.include_router(creators.router, prefix="/v1")
+app.include_router(reviews.router, prefix="/v1")
+app.include_router(earnings.router, prefix="/v1")
 app.include_router(ai.router, prefix="/v1")
 app.include_router(history.router, prefix="/v1")
 app.include_router(analytics.router, prefix="/v1")

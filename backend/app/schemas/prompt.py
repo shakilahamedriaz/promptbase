@@ -8,19 +8,23 @@ from pydantic import BaseModel, Field
 class PromptCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     body: str = Field(min_length=1)
+    description: str | None = None
     category: str = Field(default="general", max_length=50)
     tags: list[str] = Field(default_factory=list)
     is_favorite: bool = False
     variables: dict[str, Any] = Field(default_factory=dict)
+    price_credits: int | None = None
 
 
 class PromptUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     body: str | None = Field(default=None, min_length=1)
+    description: str | None = None
     category: str | None = Field(default=None, max_length=50)
     tags: list[str] | None = None
     is_favorite: bool | None = None
     variables: dict[str, Any] | None = None
+    price_credits: int | None = None
 
 
 class PromptResponse(BaseModel):
@@ -28,6 +32,7 @@ class PromptResponse(BaseModel):
     user_id: UUID
     title: str
     body: str
+    description: str | None
     category: str
     tags: list[str]
     is_favorite: bool
@@ -35,6 +40,9 @@ class PromptResponse(BaseModel):
     quality_score: int | None
     variables: dict[str, Any]
     is_deleted: bool
+    is_public: bool
+    fork_of_id: UUID | None
+    price_credits: int | None
     created_at: datetime
     updated_at: datetime
 

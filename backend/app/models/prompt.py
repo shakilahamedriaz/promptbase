@@ -39,6 +39,14 @@ class Prompt(Base):
         server_default=text("'{}'::jsonb"),
     )
     is_deleted = Column(Boolean, nullable=False, default=False, server_default=text("false"))
+    is_public = Column(Boolean, nullable=False, default=False, server_default=text("false"))
+    fork_of_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("prompts.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    description = Column(Text, nullable=True)
+    price_credits = Column(Integer, nullable=True)
     created_at = Column(
         TIMESTAMP(timezone=True),
         nullable=False,
@@ -55,3 +63,7 @@ class Prompt(Base):
     versions = relationship("PromptVersion", back_populates="prompt", lazy="select", cascade="all, delete-orphan")
     history = relationship("PromptHistory", back_populates="prompt", lazy="select")
     refinements = relationship("AIRefinement", back_populates="prompt", lazy="select")
+    fork_of = relationship("Prompt", remote_side=[id], foreign_keys=[fork_of_id])
+    ratings = relationship("PromptRating", back_populates="prompt", lazy="select", cascade="all, delete-orphan")
+    favorites = relationship("PromptFavorite", back_populates="prompt", lazy="select", cascade="all, delete-orphan")
+    reviews = relationship("PromptReview", back_populates="prompt", lazy="select", cascade="all, delete-orphan")

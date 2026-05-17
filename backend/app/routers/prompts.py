@@ -162,3 +162,21 @@ async def get_versions(
     db: AsyncSession = Depends(get_db),
 ):
     return await prompt_service.get_versions(db, prompt_id, user_id)
+
+
+@router.patch("/{prompt_id}/publish", response_model=PromptResponse)
+async def publish_prompt(
+    prompt_id: UUID,
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    return await prompt_service.publish_prompt(db, prompt_id, user_id)
+
+
+@router.patch("/{prompt_id}/unpublish", response_model=PromptResponse)
+async def unpublish_prompt(
+    prompt_id: UUID,
+    user_id: UUID = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    return await prompt_service.unpublish_prompt(db, prompt_id, user_id)

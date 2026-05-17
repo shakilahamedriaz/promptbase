@@ -20,6 +20,7 @@ class User(Base):
     avatar_url = Column(Text, nullable=True)
     auth_provider = Column(String(20), nullable=False, default="email", server_default="email")
     plan = Column(String(20), nullable=False, default="free", server_default="free")
+    bio = Column(Text, nullable=True)
     created_at = Column(
         TIMESTAMP(timezone=True),
         nullable=False,
@@ -33,3 +34,18 @@ class User(Base):
     # Relationships
     prompts = relationship("Prompt", back_populates="user", lazy="select")
     history = relationship("PromptHistory", back_populates="user", lazy="select")
+    followers = relationship(
+        "UserFollow",
+        foreign_keys="UserFollow.following_id",
+        back_populates="following_user",
+        lazy="select",
+        cascade="all, delete-orphan",
+    )
+    following = relationship(
+        "UserFollow",
+        foreign_keys="UserFollow.follower_id",
+        back_populates="follower_user",
+        lazy="select",
+        cascade="all, delete-orphan",
+    )
+    favorites = relationship("PromptFavorite", back_populates="user", lazy="select", cascade="all, delete-orphan")
